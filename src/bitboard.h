@@ -43,12 +43,12 @@ namespace lookups
 {
     extern void init();
     template<u32 side>
-    extern inline u64 pawn(u32 square);
-    extern inline u64 knight(u32 square);
-    extern inline u64 bishop(u32 square, u64 occupancy);
-    extern inline u64 rook(u32 square, u64 occupancy);
-    extern inline u64 queen(u32 square, u64 occupancy);
-    extern inline u64 king(u32 square);
+    extern u64 pawn(u32 square);
+    extern u64 knight(u32 square);
+    extern u64 bishop(u32 square, u64 occupancy);
+    extern u64 rook(u32 square, u64 occupancy);
+    extern u64 queen(u32 square, u64 occupancy);
+    extern u64 king(u32 square);
 }
 
 #endif

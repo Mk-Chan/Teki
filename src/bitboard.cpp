@@ -69,19 +69,19 @@ namespace lookups
     }
 
     template<u32 side>
-    inline u64 pawn(u32 square) { return pawn_attacks[side][square]; }
-    inline u64 knight(u32 square) { return knight_attacks[square]; }
-    inline u64 king(u32 square) { return king_attacks[square]; }
+    u64 pawn(u32 square) { return pawn_attacks[side][square]; }
+    u64 knight(u32 square) { return knight_attacks[square]; }
+    u64 king(u32 square) { return king_attacks[square]; }
 
-    inline u64 bishop(u32 square, u64 occupancy)
+    u64 bishop(u32 square, u64 occupancy)
     {
         return 0;
     }
-    inline u64 rook(u32 square, u64 occupancy)
+    u64 rook(u32 square, u64 occupancy)
     {
         return 0;
     }
-    inline u64 queen(u32 square, u64 occupancy)
+    u64 queen(u32 square, u64 occupancy)
     {
         return 0;
     }
