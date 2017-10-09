@@ -16,12 +16,40 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "uci.h"
-#include "bitboard.h"
+#ifndef SCORE_H
+#define SCORE_H
 
-int main()
+#include "definitions.h"
+
+class Score
 {
-    lookups::init();
-    uci::init();
-    return 0;
-}
+public:
+    // Constructors
+    Score(i32 mg, i32 eg)
+    {
+        this->mg = mg;
+        this->eg = eg;
+    }
+
+    // Operator overloads
+    Score& operator+=(const Score& rhs)
+    {
+        this->mg += rhs.get_mg();
+        this->eg += rhs.get_eg();
+        return *this;
+    }
+
+    // Set values
+    void set_mg(i32 mg) { this->mg = mg; }
+    void set_eg(i32 eg) { this->eg = eg; }
+
+    // Get values
+    i32 get_mg() const { return mg; }
+    i32 get_eg() const { return eg; }
+
+private:
+    i32 mg;
+    i32 eg;
+};
+
+#endif

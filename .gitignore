@@ -1,5 +1,9 @@
 # Object files
 *.o
 
+# Executables
+teki
+
 # Misc. files
 .ycm_extra_conf.py
+.lvimrc

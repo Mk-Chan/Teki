@@ -16,12 +16,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "uci.h"
-#include "bitboard.h"
+#ifndef UCI_H
+#define UCI_H
 
-int main()
+#ifndef NAME
+#define NAME ("Teki")
+#endif
+
+#define AUTHOR ("Manik Charan")
+
+namespace uci
 {
-    lookups::init();
-    uci::init();
-    return 0;
+    extern void init();
 }
+
+#endif
