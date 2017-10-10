@@ -44,7 +44,7 @@ enum Square
     A6, B6, C6, D6, E6, F6, G6, H6,
     A7, B7, C7, D7, E7, F7, G7, H7,
     A8, B8, C8, D8, E8, F8, G8, H8,
-    NUM_SQUARES
+    NUM_SQUARES, INVALID_SQ
 };
 
 enum File
@@ -61,8 +61,20 @@ enum Rank
 
 enum PieceType
 {
-    NO_PIECE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
-    NUM_PIECE_TYPES
+    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
+    NUM_PIECE_TYPES, NO_PIECE
+};
+
+enum CastlingType
+{
+    KINGSIDE, QUEENSIDE,
+    NUM_CASTLING_TYPES
+};
+
+enum CastlingRights
+{
+    WHITE_OO, WHITE_OOO,
+    BLACK_OO, BLACK_OOO
 };
 
 inline u32 get_sq(u32 rank, u32 file) { return (rank << 3) ^ file; }

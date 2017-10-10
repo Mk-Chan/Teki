@@ -75,15 +75,94 @@ namespace lookups
 
     u64 bishop(u32 square, u64 occupancy)
     {
-        return 0;
+        u64 s_ne, s_nw, s_se, s_sw;
+        u64 ne_mask, nw_mask, se_mask, sw_mask;
+        u64 sq_bb = BB(square);
+
+        ne_mask = ~(occupancy | RANK_1_MASK | FILE_H_MASK);
+        nw_mask = ~(occupancy | RANK_1_MASK | FILE_A_MASK);
+        se_mask = ~(occupancy | RANK_8_MASK | FILE_H_MASK);
+        sw_mask = ~(occupancy | RANK_8_MASK | FILE_A_MASK);
+
+        s_ne = (sq_bb << 7) & ne_mask;
+        s_nw = (sq_bb << 9) & nw_mask;
+        s_se = (sq_bb >> 9) & se_mask;
+        s_sw = (sq_bb >> 7) & sw_mask;
+
+        for (u32 times = 0; times < 6; ++times) {
+            s_ne |= (s_ne << 7) & ne_mask;
+            s_nw |= (s_nw << 9) & nw_mask;
+            s_se |= (s_se >> 9) & se_mask;
+            s_sw |= (s_sw >> 7) & sw_mask;
+        }
+
+        return s_ne | s_nw | s_se | s_sw;
     }
+
     u64 rook(u32 square, u64 occupancy)
     {
-        return 0;
+        u64 s_n, s_w, s_s, s_e;
+        u64 n_mask, w_mask, s_mask, e_mask;
+        u64 sq_bb = BB(square);
+
+        n_mask = ~(occupancy | RANK_1_MASK);
+        w_mask = ~(occupancy | FILE_A_MASK);
+        s_mask = ~(occupancy | RANK_8_MASK);
+        e_mask = ~(occupancy | FILE_H_MASK);
+
+        s_n = (sq_bb << 8) & n_mask;
+        s_w = (sq_bb << 1) & w_mask;
+        s_s = (sq_bb >> 8) & s_mask;
+        s_e = (sq_bb >> 1) & e_mask;
+
+        for (u32 times = 0; times < 6; ++times) {
+            s_n |= (s_n << 8) & n_mask;
+            s_w |= (s_w << 1) & w_mask;
+            s_s |= (s_s >> 8) & s_mask;
+            s_e |= (s_e >> 1) & e_mask;
+        }
+
+        return s_n | s_w | s_s | s_e;
     }
+
     u64 queen(u32 square, u64 occupancy)
     {
-        return 0;
+        u64 s_ne, s_nw, s_se, s_sw;
+        u64 ne_mask, nw_mask, se_mask, sw_mask;
+        u64 s_n, s_w, s_s, s_e;
+        u64 n_mask, w_mask, s_mask, e_mask;
+        u64 sq_bb = BB(square);
+
+        ne_mask = ~(occupancy | RANK_1_MASK | FILE_H_MASK);
+        nw_mask = ~(occupancy | RANK_1_MASK | FILE_A_MASK);
+        se_mask = ~(occupancy | RANK_8_MASK | FILE_H_MASK);
+        sw_mask = ~(occupancy | RANK_8_MASK | FILE_A_MASK);
+        n_mask = ~(occupancy | RANK_1_MASK);
+        w_mask = ~(occupancy | FILE_A_MASK);
+        s_mask = ~(occupancy | RANK_8_MASK);
+        e_mask = ~(occupancy | FILE_H_MASK);
+
+        s_ne = (sq_bb << 7) & ne_mask;
+        s_nw = (sq_bb << 9) & nw_mask;
+        s_se = (sq_bb >> 9) & se_mask;
+        s_sw = (sq_bb >> 7) & sw_mask;
+        s_n = (sq_bb << 8) & n_mask;
+        s_w = (sq_bb << 1) & w_mask;
+        s_s = (sq_bb >> 8) & s_mask;
+        s_e = (sq_bb >> 1) & e_mask;
+
+        for (u32 times = 0; times < 6; ++times) {
+            s_ne |= (s_ne << 7) & ne_mask;
+            s_nw |= (s_nw << 9) & nw_mask;
+            s_se |= (s_se >> 9) & se_mask;
+            s_sw |= (s_sw >> 7) & sw_mask;
+            s_n |= (s_n << 8) & n_mask;
+            s_w |= (s_w << 1) & w_mask;
+            s_s |= (s_s >> 8) & s_mask;
+            s_e |= (s_e >> 1) & e_mask;
+        }
+
+        return s_ne | s_nw | s_se | s_sw | s_n | s_w | s_s | s_e;
     }
 }
 

@@ -21,6 +21,9 @@
 #include <sstream>
 #include <thread>
 #include "uci.h"
+#include "position.h"
+
+#define INITIAL_POSITION ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
 namespace uci
 {
@@ -42,14 +45,37 @@ namespace uci
             std::cout << "readyok" << std::endl;
         }
 
-        void perft()
+        void perft(Position& pos)
         {
             
+        }
+
+        void position(Position& pos, std::stringstream& stream)
+        {
+            std::string word;
+            stream >> word;
+            if (word == "startpos")
+            {
+                std::stringstream stream = std::stringstream(INITIAL_POSITION);
+                pos.init(stream);
+            }
+            else if (word == "fen")
+            {
+                pos.init(stream);
+            }
+
+            pos.display();
+
+            if (stream >> word && word == "moves")
+            {
+                // Do moves here
+            }
         }
     }
 
     void loop()
     {
+        Position pos;
         std::string line, word;
         while (true)
         {
@@ -57,18 +83,17 @@ namespace uci
             std::stringstream stream(line);
 
             stream >> word;
-            if (word == "uci") handler::uci();
-            else if (word == "ucinewgame") handler::ucinewgame();
+            if (word == "ucinewgame") handler::ucinewgame();
             else if (word == "isready") handler::isready();
-            else if (word == "perft") handler::perft();
+            else if (word == "perft") handler::perft(pos);
+            else if (word == "position") handler::position(pos, stream);
             else if (word == "quit") break;
         }
     }
 
     void init()
     {
-        std::ios_base::sync_with_stdio(false);
-        std::cout.setf(std::ios::unitbuf);
+        handler::uci();
         loop();
     }
 }

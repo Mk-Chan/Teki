@@ -20,11 +20,27 @@
 #define POSITION_H
 
 #include "definitions.h"
+#include <iostream>
+#include <string>
+#include <sstream>
 #include <vector>
+
+namespace castling
+{
+    extern u32 rook_sqs[2][2];
+    extern std::uint8_t spoilers[64];
+}
 
 class Position
 {
 public:
+    // Constructors
+    Position();
+    void init(std::stringstream& stream);
+
+    // Misc
+    void display();
+
     // Getters
     std::uint8_t get_castling_rights();
     std::uint8_t get_half_moves();
@@ -35,15 +51,16 @@ public:
     u64 piece_bb(u32 pt);
     u64 color_bb(u32 c);
     u64 piece_bb(u32 pt, u32 c);
+    u32 piece_on(u32 sq);
 
     // Operations
     void spoil_castling_rights(std::uint8_t spoiler);
     void inc_half_moves();
     void reset_half_moves();
-    u32 piece_on(u32 sq);
-    void put_piece(u32 pt, u32 sq, u32 c);
-    void remove_piece(u32 pt, u32 sq, u32 c);
-    void move_piece(u32 pt, u32 from, u32 to, u32 c);
+    void flip();
+    void put_piece(u32 sq, u32 pt, u32 c);
+    void remove_piece(u32 sq, u32 pt, u32 c);
+    void move_piece(u32 from, u32 to, u32 pt, u32 c);
 
 private:
     u64 bb[6];
@@ -52,11 +69,12 @@ private:
     u32 ep_sq;
     std::uint8_t castling_rights;
     std::uint8_t half_moves;
-    u64 hash_key;
-    std::vector<u64> prev_hashes;
+    std::vector<u64> hash_keys;
 };
 
-inline u64 Position::get_hash_key() { return this->hash_key; }
+inline Position::Position() {}
+
+inline u64 Position::get_hash_key() { return this->hash_keys.back(); }
 inline std::uint8_t Position::get_castling_rights() { return this->castling_rights; }
 inline std::uint8_t Position::get_half_moves() { return this->half_moves; }
 inline bool Position::is_flipped() { return this->flipped; }
@@ -70,6 +88,26 @@ inline void Position::spoil_castling_rights(std::uint8_t spoiler) { this->castli
 inline void Position::inc_half_moves() { ++this->half_moves; }
 inline void Position::reset_half_moves() { this->half_moves = 0; }
 
+inline void Position::flip()
+{
+    for (u64* bb = this->bb; bb < this->bb + NUM_PIECE_TYPES; ++bb)
+        *bb = __builtin_bswap64(*bb);
+    for (u64* bb = this->color; bb < this->color + NUM_COLORS; ++bb)
+        *bb = __builtin_bswap64(*bb);
+
+    u64 tmp_color = this->color[1];
+    this->color[1] = this->color[0];
+    this->color[0] = tmp_color;
+
+    this->flipped = !this->flipped;
+    if (this->ep_sq != INVALID_SQ)
+        this->ep_sq ^= 56;
+
+    std::uint8_t tmp_cr = (this->castling_rights & 3) << 2;
+    this->castling_rights >>= 2;
+    this->castling_rights ^= tmp_cr;
+}
+
 inline u32 Position::piece_on(u32 sq)
 {
     u64 sq_bb = BB(sq);
@@ -79,15 +117,15 @@ inline u32 Position::piece_on(u32 sq)
     return NO_PIECE;
 }
 
-inline void Position::put_piece(u32 pt, u32 sq, u32 c)
+inline void Position::put_piece(u32 sq, u32 pt, u32 c)
 {
-    assert(!piece_on(sq));
+    assert(piece_on(sq) == NO_PIECE);
     u64 bb = BB(sq);
     this->bb[pt] ^= bb;
     this->color[c] ^= bb;
 }
 
-inline void Position::remove_piece(u32 pt, u32 sq, u32 c)
+inline void Position::remove_piece(u32 sq, u32 pt, u32 c)
 {
     u64 bb = BB(sq);
     assert(this->bb[pt] & this->color[c] & bb);
@@ -95,7 +133,7 @@ inline void Position::remove_piece(u32 pt, u32 sq, u32 c)
     this->color[c] ^= bb;
 }
 
-inline void Position::move_piece(u32 pt, u32 from, u32 to, u32 c)
+inline void Position::move_piece(u32 from, u32 to, u32 pt, u32 c)
 {
     assert(from != to);
     u64 bb = BB(from) ^ BB(to);
