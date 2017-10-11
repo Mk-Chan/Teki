@@ -17,6 +17,8 @@
  */
 
 #include "position.h"
+#include "move.h"
+#include "bitboard.h"
 
 namespace castling
 {
@@ -37,6 +39,35 @@ char piece_char(u32 pt, u32 c)
     default: pchar = 'd'; break;
     }
     return c == WHITE ? std::toupper(pchar) : pchar;
+}
+
+void Position::flip()
+{
+    for (u64* bb = this->bb; bb < this->bb + NUM_PIECE_TYPES; ++bb)
+        *bb = __builtin_bswap64(*bb);
+    for (u64* bb = this->color; bb < this->color + NUM_COLORS; ++bb)
+        *bb = __builtin_bswap64(*bb);
+
+    u64 tmp_color = this->color[1];
+    this->color[1] = this->color[0];
+    this->color[0] = tmp_color;
+
+    this->flipped = !this->flipped;
+    if (this->ep_sq != INVALID_SQ)
+        this->ep_sq ^= 56;
+
+    std::uint8_t tmp_cr = (this->castling_rights & 3) << 2;
+    this->castling_rights >>= 2;
+    this->castling_rights ^= tmp_cr;
+}
+
+u32 Position::piece_on(u32 sq)
+{
+    u64 sq_bb = BB(sq);
+    for (u32 pt = PAWN; pt < NUM_PIECE_TYPES; ++pt)
+        if (this->bb[pt] & sq_bb)
+            return pt;
+    return NO_PIECE;
 }
 
 void Position::display()
@@ -183,4 +214,92 @@ void Position::init(std::stringstream& stream)
 
     if (need_to_flip)
         this->flip();
+}
+
+u64 Position::attackers_to(u32 sq)
+{
+    u64 occupancy = this->occupancy_bb();
+    return (lookups::rook(sq, occupancy) & (piece_bb(ROOK) | piece_bb(QUEEN)))
+         | (lookups::bishop(sq, occupancy) & (piece_bb(BISHOP) | piece_bb(QUEEN)))
+         | (lookups::knight(sq) & piece_bb(KNIGHT))
+         | (lookups::pawn(sq, US) & piece_bb(PAWN, THEM))
+         | (lookups::pawn(sq, THEM) & piece_bb(PAWN, US))
+         | (lookups::king(sq) & piece_bb(KING));
+}
+
+u64 Position::attackers_to(u32 sq, u32 by_side)
+{
+    return this->attackers_to(sq) & this->color_bb(by_side);
+}
+
+bool Position::make_move(Move move)
+{
+    u32 from = from_sq(move),
+        to = to_sq(move);
+
+    this->ep_sq = INVALID_SQ;
+    this->castling_rights &= castling::spoilers[from] & castling::spoilers[to];
+    if (piece_on(from) == PAWN)
+        this->reset_half_moves();
+    else
+        this->inc_half_moves();
+
+    switch (move & MOVE_TYPE_MASK) {
+        case NORMAL:
+            this->move_piece(from, to, this->piece_on(from), US);
+            break;
+        case CAPTURE:
+            this->remove_piece(to, piece_on(to), THEM);
+            this->move_piece(from, to, this->piece_on(from), US);
+            this->reset_half_moves();
+            break;
+        case DOUBLE_PUSH:
+            this->move_piece(from, to, PAWN, US);
+            this->ep_sq = from + 8;
+            break;
+        case ENPASSANT:
+            this->move_piece(from, to, PAWN, US);
+            this->remove_piece(to - 8, PAWN, THEM);
+            break;
+        case CASTLING:
+            u32 rfrom, rto;
+            switch (to) {
+			case C1:
+				rto = D1;
+				rfrom = castling::rook_sqs[US][QUEENSIDE];
+				break;
+			case G1:
+				rto = F1;
+				rfrom = castling::rook_sqs[US][KINGSIDE];
+				break;
+			default:
+				rto = rfrom = -1;
+				break;
+            }
+            this->remove_piece(rfrom, ROOK, US);
+            this->remove_piece(from, KING, US);
+            this->put_piece(rto, ROOK, US);
+            this->put_piece(to, KING, US);
+            break;
+        case PROM_CAPTURE:
+            this->remove_piece(to, this->piece_on(to), THEM);
+            this->remove_piece(from, PAWN, US);
+            this->put_piece(to, prom_type(move), US);
+            break;
+        case PROMOTION:
+            this->remove_piece(from, PAWN, US);
+            this->put_piece(to, prom_type(move), US);
+            break;
+        default:
+            std::cout << "MOVE TYPE ERROR!" << std::endl;
+            break;
+    }
+
+    if (attackers_to(position_of(KING, US), THEM))
+        return false;
+
+    this->flip();
+    //this->hash_keys.push_back(this->calc_hash());
+
+    return true;
 }

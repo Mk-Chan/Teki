@@ -82,7 +82,8 @@ inline u32 rank_of(u32 sq) { return sq >> 3; }
 inline u32 file_of(u32 sq) { return sq & 7; }
 
 inline u32 popcnt(u64 bb) { return __builtin_popcountll(bb); }
-inline u32 bitscan(u64 bb) { return __builtin_ctzll(bb); }
+inline u32 fbitscan(u64 bb) { return __builtin_ctzll(bb); }
+inline u32 rbitscan(u64 bb) { return __builtin_clzll(bb); }
 
 inline u64 BB(u32 shift) { return u64(1) << shift; }
 extern void print_bb(u64 bb);

@@ -54,10 +54,10 @@ enum CaptureType
     CAPTURE_TYPE_MASK = 7 << 22
 };
 
-inline u32 from_sq(Move& move) { return move & 0x3f; }
-inline u32 to_sq(Move& move) { return (move & 0xfc0) >> 6; }
-inline u32 prom_type(Move& move) { return (move & PROMOTION_TYPE_MASK) >> 19; }
-inline u32 cap_type(Move& move) { return (move & CAPTURE_TYPE_MASK) >> 22; }
+inline u32 from_sq(Move move) { return move & 0x3f; }
+inline u32 to_sq(Move move) { return (move & 0xfc0) >> 6; }
+inline u32 prom_type(Move move) { return (move & PROMOTION_TYPE_MASK) >> 19; }
+inline u32 cap_type(Move move) { return (move & CAPTURE_TYPE_MASK) >> 22; }
 
 template <MoveType move_type,
           PromotionType prom_type=PROM_NONE,

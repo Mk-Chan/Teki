@@ -42,13 +42,31 @@
 namespace lookups
 {
     extern void init();
-    template<u32 side>
-    extern u64 pawn(u32 square);
+    extern u32 distance(u32 from, u32 to);
+    extern u64 ray(u32 from, u32 to);
+    extern u64 xray(u32 from, u32 to);
+    extern u64 full_ray(u32 from, u32 to);
+    extern u64 intervening_sqs(u32 from, u32 to);
+    extern u64 ahead(u32 square);
+    extern u64 behind(u32 square);
+    extern u64 pawn(u32 square, u32 side);
     extern u64 knight(u32 square);
+    extern u64 bishop(u32 square);
+    extern u64 rook(u32 square);
+    extern u64 queen(u32 square);
     extern u64 bishop(u32 square, u64 occupancy);
     extern u64 rook(u32 square, u64 occupancy);
     extern u64 queen(u32 square, u64 occupancy);
     extern u64 king(u32 square);
+
+    extern u64 north(u32 square);
+    extern u64 south(u32 square);
+    extern u64 east(u32 square);
+    extern u64 west(u32 square);
+    extern u64 northeast(u32 square);
+    extern u64 northwest(u32 square);
+    extern u64 southeast(u32 square);
+    extern u64 southwest(u32 square);
 }
 
 #endif
