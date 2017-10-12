@@ -277,7 +277,6 @@ namespace lookups
         atk &= ~southeast(rbitscan(se_blockers));
 
         return atk;
-
     }
 
     u64 rook(u32 square, u64 occupancy)
@@ -318,5 +317,18 @@ namespace lookups
         atk &= ~east(fbitscan(e_blockers));
 
         return atk;
+    }
+
+    u64 attacks(u32 piece_type, u32 square, u64 occupancy, u32 side)
+    {
+        switch (piece_type) {
+        case PAWN: return pawn(square, side);
+        case KNIGHT: return knight(square);
+        case BISHOP: return bishop(square, occupancy);
+        case ROOK: return rook(square, occupancy);
+        case QUEEN: return queen(square, occupancy);
+        case KING: return king(square);
+        default: return -1;
+        }
     }
 }

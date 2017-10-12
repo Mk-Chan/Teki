@@ -5,7 +5,7 @@ CXX = g++
 CXXFLAGS = -std=c++11 -Wall -pipe $(EXTRAFLAGS) -DNAME=$(UCI_NAME)
 LDFLAGS = -Wl,--no-as-needed $(CXXFLAGS)
 
-OBJS = main.o uci.o bitboard.o position.o
+OBJS = main.o uci.o bitboard.o position.o movegen.o make_move.o
 
 BINDIR = /usr/local/bin
 
@@ -16,7 +16,7 @@ ifeq ($(BUILD),debug)
 endif
 
 ifeq ($(BUILD),release)
-	CXXFLAGS += -O3 -flto
+	CXXFLAGS += -O3 -flto -DNDEBUG
 endif
 
 all: $(EXE)

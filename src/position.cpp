@@ -22,7 +22,7 @@
 
 namespace castling
 {
-    u32 rook_sqs[2][2];
+    u32 rook_sqs[2];
     std::uint8_t spoilers[64];
 }
 
@@ -82,11 +82,11 @@ void Position::display()
         }
         else
         {
-            u32 c = ((BB(sq ^ 56) & this->color[WHITE]) && !this->flipped)
-                 || ((BB(sq) & this->color[WHITE]) && this->flipped)
-                  ? WHITE
-                  : BLACK;
-            std::cout << piece_char(piece, c) << " ";
+            u32 color = ((this->color_bb(US) & BB(sq ^ 56)) && !this->is_flipped())
+                     || ((this->color_bb(THEM) & BB(sq ^ 56)) && this->is_flipped())
+                      ? WHITE
+                      : BLACK;
+            std::cout << piece_char(piece, color) << " ";
         }
     }
     std::cout << std::endl;
@@ -153,19 +153,19 @@ void Position::init(std::stringstream& stream)
             {
                 switch (sq) {
                 case H1:
-                    castling::rook_sqs[pc][KINGSIDE] = sq;
+                    castling::rook_sqs[KINGSIDE] = H1;
                     castling::spoilers[sq] = 14;
                     break;
                 case H8:
-                    castling::rook_sqs[pc][KINGSIDE] = sq;
+                    castling::rook_sqs[KINGSIDE] = H1;
                     castling::spoilers[sq] = 11;
                     break;
                 case A1:
-                    castling::rook_sqs[pc][QUEENSIDE] = sq;
+                    castling::rook_sqs[QUEENSIDE] = A1;
                     castling::spoilers[sq] = 13;
                     break;
                 case A8:
-                    castling::rook_sqs[pc][QUEENSIDE] = sq;
+                    castling::rook_sqs[QUEENSIDE] = A1;
                     castling::spoilers[sq] = 7;
                     break;
                 default:
@@ -232,74 +232,22 @@ u64 Position::attackers_to(u32 sq, u32 by_side)
     return this->attackers_to(sq) & this->color_bb(by_side);
 }
 
-bool Position::make_move(Move move)
+u64 Position::perft(u32 depth, bool root)
 {
-    u32 from = from_sq(move),
-        to = to_sq(move);
+    if (depth == 0)
+        return u64(1);
 
-    this->ep_sq = INVALID_SQ;
-    this->castling_rights &= castling::spoilers[from] & castling::spoilers[to];
-    if (piece_on(from) == PAWN)
-        this->reset_half_moves();
-    else
-        this->inc_half_moves();
-
-    switch (move & MOVE_TYPE_MASK) {
-        case NORMAL:
-            this->move_piece(from, to, this->piece_on(from), US);
-            break;
-        case CAPTURE:
-            this->remove_piece(to, piece_on(to), THEM);
-            this->move_piece(from, to, this->piece_on(from), US);
-            this->reset_half_moves();
-            break;
-        case DOUBLE_PUSH:
-            this->move_piece(from, to, PAWN, US);
-            this->ep_sq = from + 8;
-            break;
-        case ENPASSANT:
-            this->move_piece(from, to, PAWN, US);
-            this->remove_piece(to - 8, PAWN, THEM);
-            break;
-        case CASTLING:
-            u32 rfrom, rto;
-            switch (to) {
-			case C1:
-				rto = D1;
-				rfrom = castling::rook_sqs[US][QUEENSIDE];
-				break;
-			case G1:
-				rto = F1;
-				rfrom = castling::rook_sqs[US][KINGSIDE];
-				break;
-			default:
-				rto = rfrom = -1;
-				break;
-            }
-            this->remove_piece(rfrom, ROOK, US);
-            this->remove_piece(from, KING, US);
-            this->put_piece(rto, ROOK, US);
-            this->put_piece(to, KING, US);
-            break;
-        case PROM_CAPTURE:
-            this->remove_piece(to, this->piece_on(to), THEM);
-            this->remove_piece(from, PAWN, US);
-            this->put_piece(to, prom_type(move), US);
-            break;
-        case PROMOTION:
-            this->remove_piece(from, PAWN, US);
-            this->put_piece(to, prom_type(move), US);
-            break;
-        default:
-            std::cout << "MOVE TYPE ERROR!" << std::endl;
-            break;
+    std::vector<Move> mlist = this->get_movelist();
+    u64 leaves = u64(0);
+    for (Move move : mlist) {
+        Position pos = *this;
+        if (!pos.make_move(move))
+            continue;
+        u64 count = pos.perft(depth - 1, false);
+        if (root)
+            std::cout << get_move_string(move) << ": " << count << std::endl;
+        leaves += count;
     }
 
-    if (attackers_to(position_of(KING, US), THEM))
-        return false;
-
-    this->flip();
-    //this->hash_keys.push_back(this->calc_hash());
-
-    return true;
+    return leaves;
 }

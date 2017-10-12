@@ -19,6 +19,7 @@
 #ifndef MOVE_H
 #define MOVE_H
 
+#include <string>
 #include "definitions.h"
 
 enum MoveType
@@ -47,10 +48,6 @@ enum PromotionType
 enum CaptureType
 {
     CAP_NONE = 0,
-    CAP_KNIGHT = KNIGHT << 22,
-    CAP_BISHOP = BISHOP << 22,
-    CAP_ROOK = ROOK << 22,
-    CAP_QUEEN = QUEEN << 22,
     CAPTURE_TYPE_MASK = 7 << 22
 };
 
@@ -59,12 +56,12 @@ inline u32 to_sq(Move move) { return (move & 0xfc0) >> 6; }
 inline u32 prom_type(Move move) { return (move & PROMOTION_TYPE_MASK) >> 19; }
 inline u32 cap_type(Move move) { return (move & CAPTURE_TYPE_MASK) >> 22; }
 
-template <MoveType move_type,
-          PromotionType prom_type=PROM_NONE,
-          CaptureType cap_type=CAP_NONE>
-inline Move get_move(u32 from, u32 to)
+inline Move get_move(u32 from, u32 to, u32 move_type, u32 cap_type=CAP_NONE, u32 prom_type=PROM_NONE)
 {
-    return from | (to << 6) | move_type | prom_type | cap_type;
+    assert(from < 64 && to < 64 && move_type);
+    return from | (to << 6) | move_type | prom_type | (cap_type << 22);
 }
+
+extern std::string get_move_string(Move move);
 
 #endif

@@ -27,7 +27,7 @@
 
 namespace castling
 {
-    extern u32 rook_sqs[2][2];
+    extern u32 rook_sqs[2];
     extern std::uint8_t spoilers[64];
 }
 
@@ -52,13 +52,16 @@ public:
     u64 color_bb(u32 c);
     u64 piece_bb(u32 pt, u32 c);
     u32 piece_on(u32 sq);
+    bool check_piece_on(u32 sq, u32 pt);
     u32 position_of(u32 pt, u32 c);
-    //u64 calc_hash();
+    //u64 get_hash();
     u64 attackers_to(u32 sq);
     u64 attackers_to(u32 sq, u32 by_side);
 
     // Operations
     bool make_move(Move move);
+    std::vector<u32> get_movelist();
+    u64 perft(u32 depth, bool root=true);
 
 private:
     // Internal operations
@@ -87,11 +90,12 @@ inline std::uint8_t Position::get_castling_rights() { return this->castling_righ
 inline std::uint8_t Position::get_half_moves() { return this->half_moves; }
 inline bool Position::is_flipped() { return this->flipped; }
 inline u32 Position::get_ep_sq() { return this->ep_sq; }
-inline u64 Position::occupancy_bb() { return this->color[US] ^ this->color[THEM]; }
+inline u64 Position::occupancy_bb() { return this->color_bb(US) ^ this->color_bb(THEM); }
 inline u64 Position::piece_bb(u32 pt) { return this->bb[pt]; }
 inline u64 Position::color_bb(u32 c) { return this->color[c]; }
 inline u64 Position::piece_bb(u32 pt, u32 c) { return this->bb[pt] & this->color[c]; }
 inline u32 Position::position_of(u32 pt, u32 c) { return fbitscan(piece_bb(pt, c)); }
+inline bool Position::check_piece_on(u32 sq, u32 pt) { return BB(sq) & this->piece_bb(pt); }
 
 inline void Position::spoil_castling_rights(std::uint8_t spoiler) { this->castling_rights &= spoiler; }
 inline void Position::inc_half_moves() { ++this->half_moves; }

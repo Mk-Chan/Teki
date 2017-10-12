@@ -58,6 +58,7 @@ namespace lookups
     extern u64 rook(u32 square, u64 occupancy);
     extern u64 queen(u32 square, u64 occupancy);
     extern u64 king(u32 square);
+    extern u64 attacks(u32 piece_type, u32 square, u64 occupancy, u32 side=US);
 
     extern u64 north(u32 square);
     extern u64 south(u32 square);

@@ -73,8 +73,8 @@ enum CastlingType
 
 enum CastlingRights
 {
-    WHITE_OO, WHITE_OOO,
-    BLACK_OO, BLACK_OOO
+    WHITE_OO = 1, WHITE_OOO = 2,
+    BLACK_OO = 4, BLACK_OOO = 8
 };
 
 inline u32 get_sq(u32 rank, u32 file) { return (rank << 3) ^ file; }
@@ -83,7 +83,7 @@ inline u32 file_of(u32 sq) { return sq & 7; }
 
 inline u32 popcnt(u64 bb) { return __builtin_popcountll(bb); }
 inline u32 fbitscan(u64 bb) { return __builtin_ctzll(bb); }
-inline u32 rbitscan(u64 bb) { return __builtin_clzll(bb); }
+inline u32 rbitscan(u64 bb) { return 63 - __builtin_clzll(bb); }
 
 inline u64 BB(u32 shift) { return u64(1) << shift; }
 extern void print_bb(u64 bb);
