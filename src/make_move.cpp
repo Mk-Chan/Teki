@@ -19,10 +19,16 @@
 #include "position.h"
 #include "move.h"
 
-std::string get_move_string(Move move)
+std::string get_move_string(Move move, bool flipped)
 {
     u32 from = from_sq(move),
         to = to_sq(move);
+
+    if (flipped) {
+        from ^= 56;
+        to ^= 56;
+    }
+
     std::string move_string;
     move_string.push_back('a' + file_of(from));
     move_string.push_back('1' + rank_of(from));
@@ -55,7 +61,9 @@ bool Position::make_move(Move move)
         to = to_sq(move);
 
     this->ep_sq = INVALID_SQ;
-    this->castling_rights &= castling::spoilers[from] & castling::spoilers[to];
+    this->castling_rights &= castling::spoilers[from];
+    this->castling_rights &= castling::spoilers[to];
+
     if (this->check_piece_on(from, PAWN))
         this->reset_half_moves();
     else

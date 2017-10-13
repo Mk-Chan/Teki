@@ -28,7 +28,7 @@
 namespace castling
 {
     extern u32 rook_sqs[2];
-    extern std::uint8_t spoilers[64];
+    extern u8 spoilers[64];
 }
 
 class Position

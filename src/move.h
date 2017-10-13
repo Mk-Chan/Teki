@@ -31,6 +31,7 @@ enum MoveType
     DOUBLE_PUSH = 1 << 16,
     CAPTURE = 1 << 17,
     PROM_CAPTURE = 1 << 18,
+    CAPTURE_MASK = CAPTURE | PROM_CAPTURE | ENPASSANT,
     MOVE_TYPE_MASK = NORMAL | CASTLING | ENPASSANT | PROMOTION
                    | DOUBLE_PUSH | CAPTURE | PROM_CAPTURE
 };
@@ -62,6 +63,6 @@ inline Move get_move(u32 from, u32 to, u32 move_type, u32 cap_type=CAP_NONE, u32
     return from | (to << 6) | move_type | prom_type | (cap_type << 22);
 }
 
-extern std::string get_move_string(Move move);
+extern std::string get_move_string(Move move, bool flipped);
 
 #endif

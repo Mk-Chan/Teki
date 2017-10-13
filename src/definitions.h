@@ -24,6 +24,7 @@
 
 typedef std::uint64_t u64;
 typedef std::uint32_t u32;
+typedef std::uint8_t u8;
 typedef std::uint32_t Move;
 typedef std::int32_t i32;
 

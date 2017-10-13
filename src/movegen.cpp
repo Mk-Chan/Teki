@@ -133,33 +133,37 @@ std::vector<u32> Position::get_movelist()
         static u32 const rook_end_pos[2] = { F1, D1 };
 
         u32 ksq = this->position_of(KING, US);
-        for (u32 i = KINGSIDE; i <= QUEENSIDE; ++i) {
-            if (castling_side[i] & this->castling_rights) {
-                u32 king_end_sq = king_end_pos[i],
-                    rook_end_sq = rook_end_pos[i];
-                u32 rsq = castling::rook_sqs[i];
-                u64 occupancy = this->occupancy_bb() ^ BB(ksq) ^ BB(rsq);
+        if (!this->attackers_to(ksq, THEM)) {
+            for (u32 i = KINGSIDE; i <= QUEENSIDE; ++i) {
+                if (castling_side[i] & this->castling_rights) {
+                    u32 king_end_sq = king_end_pos[i],
+                        rook_end_sq = rook_end_pos[i];
+                    u32 rsq = castling::rook_sqs[i];
+                    u64 occupancy = this->occupancy_bb() ^ BB(ksq) ^ BB(rsq);
 
-                u64 intermediate_sqs = lookups::intervening_sqs(rsq, rook_end_sq) | BB(rook_end_sq);
-                if (intermediate_sqs & occupancy)
-                    continue;
+                    assert(this->check_piece_on(rsq, ROOK));
 
-                intermediate_sqs = lookups::intervening_sqs(ksq, king_end_sq) | BB(king_end_sq);
-                if (intermediate_sqs & occupancy)
-                    continue;
+                    u64 intermediate_sqs = lookups::intervening_sqs(rsq, rook_end_sq) | BB(rook_end_sq);
+                    if (intermediate_sqs & occupancy)
+                        continue;
 
-                u32 can_castle = 1;
-                while (intermediate_sqs) {
-                    u32 sq = fbitscan(intermediate_sqs);
-                    intermediate_sqs &= intermediate_sqs - 1;
-                    if (this->attackers_to(sq, THEM)) {
-                        can_castle = 0;
-                        break;
+                    intermediate_sqs = lookups::intervening_sqs(ksq, king_end_sq) | BB(king_end_sq);
+                    if (intermediate_sqs & occupancy)
+                        continue;
+
+                    u32 can_castle = 1;
+                    while (intermediate_sqs) {
+                        u32 sq = fbitscan(intermediate_sqs);
+                        intermediate_sqs &= intermediate_sqs - 1;
+                        if (this->attackers_to(sq, THEM)) {
+                            can_castle = 0;
+                            break;
+                        }
                     }
-                }
 
-                if (can_castle)
-                    add_move(get_move(ksq, king_end_sq, CASTLING), mlist);
+                    if (can_castle)
+                        add_move(get_move(ksq, king_end_sq, CASTLING), mlist);
+                }
             }
         }
     }

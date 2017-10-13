@@ -23,7 +23,16 @@
 namespace castling
 {
     u32 rook_sqs[2];
-    std::uint8_t spoilers[64];
+    u8 spoilers[64] = {
+        13, 15, 15, 15, 12, 15, 15, 14,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        7,  15, 15, 15, 3,  15, 15, 11
+    };
 }
 
 char piece_char(u32 pt, u32 c)
@@ -105,10 +114,6 @@ void Position::init(std::stringstream& stream)
     this->half_moves = 0;
     this->hash_keys.reserve(100);
 
-    // Initialize the castling spoilers
-    for (u32 sq = A1; sq < NUM_SQUARES; ++sq)
-        castling::spoilers[sq] = 15;
-
     std::string part;
 
     // Piece list
@@ -145,28 +150,20 @@ void Position::init(std::stringstream& stream)
             default : pt = -1, pc = -1; break; // Error
             }
             this->put_piece(sq, pt, pc);
-            if (pt == KING)
-            {
-                castling::spoilers[sq] = pc == WHITE ? 12 : 3;
-            }
-            else if (pt == ROOK)
+            if (pt == ROOK)
             {
                 switch (sq) {
                 case H1:
                     castling::rook_sqs[KINGSIDE] = H1;
-                    castling::spoilers[sq] = 14;
                     break;
                 case H8:
                     castling::rook_sqs[KINGSIDE] = H1;
-                    castling::spoilers[sq] = 11;
                     break;
                 case A1:
                     castling::rook_sqs[QUEENSIDE] = A1;
-                    castling::spoilers[sq] = 13;
                     break;
                 case A8:
                     castling::rook_sqs[QUEENSIDE] = A1;
-                    castling::spoilers[sq] = 7;
                     break;
                 default:
                     break;
@@ -245,7 +242,8 @@ u64 Position::perft(u32 depth, bool root)
             continue;
         u64 count = pos.perft(depth - 1, false);
         if (root)
-            std::cout << get_move_string(move) << ": " << count << std::endl;
+            std::cout << get_move_string(move, this->is_flipped()) << ": "
+                      << count << std::endl;
         leaves += count;
     }
 
