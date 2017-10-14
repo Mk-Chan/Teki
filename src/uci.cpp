@@ -22,85 +22,99 @@
 #include <thread>
 #include "uci.h"
 #include "position.h"
+#include "move.h"
 
 #define INITIAL_POSITION ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
+Move get_parsed_move(Position& pos, std::string& move_str)
+{
+    std::vector<Move> mlist = pos.get_movelist();
+    for (Move move : mlist) {
+        if (get_move_string(move, pos.is_flipped()) == move_str)
+            return move;
+    }
+    std::cout << "CANNOT PARSE MOVE " << move_str << "!" << std::endl;
+    return 0;
+}
+
+namespace handler
+{
+    void uci()
+    {
+        std::cout << "id name " << NAME << '\n'
+                  << "id author " << AUTHOR << std::endl;
+    }
+
+    void d(Position& pos)
+    {
+        pos.display();
+    }
+
+    void ucinewgame()
+    {
+        // Reset search/eval state (hashtables, history etc)
+    }
+
+    void isready()
+    {
+        std::cout << "readyok" << std::endl;
+    }
+
+    void perft(Position& pos, std::stringstream& stream)
+    {
+        u32 depth;
+        if (!(stream >> depth))
+            depth = 1;
+        u64 count = pos.perft(depth);
+        std::cout << count << std::endl;
+    }
+
+    void position(Position& pos, std::stringstream& stream)
+    {
+        std::string word;
+        stream >> word;
+        if (word == "startpos")
+        {
+            std::stringstream stream = std::stringstream(INITIAL_POSITION);
+            pos.init(stream);
+        }
+        else if (word == "fen")
+        {
+            pos.init(stream);
+        }
+
+        if (stream >> word && word == "moves")
+        {
+            std::string move_str;
+            while (stream >> move_str)
+                pos.make_move(get_parsed_move(pos, move_str));
+        }
+    }
+}
+
+void loop()
+{
+    Position pos;
+    std::stringstream stream = std::stringstream(INITIAL_POSITION);
+    pos.init(stream);
+    std::string line, word;
+    while (true)
+    {
+        std::getline(std::cin, line);
+        std::stringstream stream(line);
+
+        stream >> word;
+        if (word == "d") handler::d(pos);
+        else if (word == "ucinewgame") handler::ucinewgame();
+        else if (word == "isready") handler::isready();
+        else if (word == "perft") handler::perft(pos, stream);
+        else if (word == "position") handler::position(pos, stream);
+        else if (word == "quit") break;
+    }
+}
+
 namespace uci
 {
-    namespace handler
-    {
-        void uci()
-        {
-            std::cout << "id name " << NAME << '\n'
-                      << "id author " << AUTHOR << std::endl;
-        }
-
-        void d(Position& pos)
-        {
-            pos.display();
-        }
-
-        void ucinewgame()
-        {
-            // Reset search/eval state (hashtables, history etc)
-        }
-
-        void isready()
-        {
-            std::cout << "readyok" << std::endl;
-        }
-
-        void perft(Position& pos, std::stringstream& stream)
-        {
-            u32 depth;
-            if (!(stream >> depth))
-                depth = 1;
-            u64 count = pos.perft(depth);
-            std::cout << count << std::endl;
-        }
-
-        void position(Position& pos, std::stringstream& stream)
-        {
-            std::string word;
-            stream >> word;
-            if (word == "startpos")
-            {
-                std::stringstream stream = std::stringstream(INITIAL_POSITION);
-                pos.init(stream);
-            }
-            else if (word == "fen")
-            {
-                pos.init(stream);
-            }
-
-            if (stream >> word && word == "moves")
-            {
-                // Do moves here
-            }
-        }
-    }
-
-    void loop()
-    {
-        Position pos;
-        std::stringstream stream = std::stringstream(INITIAL_POSITION);
-        pos.init(stream);
-        std::string line, word;
-        while (true)
-        {
-            std::getline(std::cin, line);
-            std::stringstream stream(line);
-
-            stream >> word;
-            if (word == "d") handler::d(pos);
-            else if (word == "ucinewgame") handler::ucinewgame();
-            else if (word == "isready") handler::isready();
-            else if (word == "perft") handler::perft(pos, stream);
-            else if (word == "position") handler::position(pos, stream);
-            else if (word == "quit") break;
-        }
-    }
-
     void init()
     {
         handler::uci();
