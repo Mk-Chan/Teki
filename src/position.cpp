@@ -62,7 +62,7 @@ void Position::flip()
     this->castling_rights ^= tmp_cr;
 }
 
-u32 Position::piece_on(u32 sq)
+u32 Position::piece_on(u32 sq) const
 {
     u64 sq_bb = BB(sq);
     for (u32 pt = PAWN; pt < NUM_PIECE_TYPES; ++pt)
@@ -93,9 +93,8 @@ void Position::display()
     std::cout << std::endl;
 }
 
-void Position::init(std::stringstream& stream)
+void Position::clear()
 {
-    // Clear everything
     for (u32 i = 0; i < 6; ++i)
         this->bb[i] = 0;
     for (u32 i = 0; i < 2; ++i)
@@ -105,6 +104,11 @@ void Position::init(std::stringstream& stream)
     this->castling_rights = 0;
     this->half_moves = 0;
     this->hash_keys.reserve(100);
+}
+
+void Position::init(std::stringstream& stream)
+{
+    this->clear();
     for (u32 i = 0 ; i < 64; ++i)
         castling::spoilers[i] = 15;
 
@@ -209,7 +213,7 @@ void Position::init(std::stringstream& stream)
         this->flip();
 }
 
-u64 Position::attackers_to(u32 sq)
+u64 Position::attackers_to(u32 sq) const
 {
     u64 occupancy = this->occupancy_bb();
     return (lookups::rook(sq, occupancy) & (piece_bb(ROOK) | piece_bb(QUEEN)))
@@ -220,12 +224,12 @@ u64 Position::attackers_to(u32 sq)
          | (lookups::king(sq) & piece_bb(KING));
 }
 
-u64 Position::attackers_to(u32 sq, u32 by_side)
+u64 Position::attackers_to(u32 sq, u32 by_side) const
 {
     return this->attackers_to(sq) & this->color_bb(by_side);
 }
 
-u64 Position::in_check(u32 side)
+u64 Position::in_check(u32 side) const
 {
         return attackers_to(this->position_of(KING, side), !side);
 }
