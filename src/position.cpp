@@ -22,17 +22,9 @@
 
 namespace castling
 {
+    bool is_frc = false;
     u32 rook_sqs[2];
-    u8 spoilers[64] = {
-        13, 15, 15, 15, 12, 15, 15, 14,
-        15, 15, 15, 15, 15, 15, 15, 15,
-        15, 15, 15, 15, 15, 15, 15, 15,
-        15, 15, 15, 15, 15, 15, 15, 15,
-        15, 15, 15, 15, 15, 15, 15, 15,
-        15, 15, 15, 15, 15, 15, 15, 15,
-        15, 15, 15, 15, 15, 15, 15, 15,
-        7,  15, 15, 15, 3,  15, 15, 11
-    };
+    u8 spoilers[64];
 }
 
 char piece_char(u32 pt, u32 c)
@@ -113,6 +105,20 @@ void Position::init(std::stringstream& stream)
     this->castling_rights = 0;
     this->half_moves = 0;
     this->hash_keys.reserve(100);
+    for (u32 i = 0 ; i < 64; ++i)
+        castling::spoilers[i] = 15;
+
+    if (!castling::is_frc)
+    {
+        castling::rook_sqs[KINGSIDE] = H1;
+        castling::rook_sqs[QUEENSIDE] = A1;
+        castling::spoilers[H1] = 14;
+        castling::spoilers[H8] = 11;
+        castling::spoilers[A1] = 13;
+        castling::spoilers[A8] = 7;
+        castling::spoilers[E1] = 12;
+        castling::spoilers[E8] = 3;
+    }
 
     std::string part;
 
@@ -150,25 +156,6 @@ void Position::init(std::stringstream& stream)
             default : pt = -1, pc = -1; break; // Error
             }
             this->put_piece(sq, pt, pc);
-            if (pt == ROOK)
-            {
-                switch (sq) {
-                case H1:
-                    castling::rook_sqs[KINGSIDE] = H1;
-                    break;
-                case H8:
-                    castling::rook_sqs[KINGSIDE] = H1;
-                    break;
-                case A1:
-                    castling::rook_sqs[QUEENSIDE] = A1;
-                    break;
-                case A8:
-                    castling::rook_sqs[QUEENSIDE] = A1;
-                    break;
-                default:
-                    break;
-                }
-            }
             ++i;
         }
     }
@@ -181,13 +168,22 @@ void Position::init(std::stringstream& stream)
     stream >> part;
     for (u32 i = 0; i < part.length(); ++i) {
         char c = part[i];
-        switch (c) {
-        case 'K': this->castling_rights |= WHITE_OO; break;
-        case 'Q': this->castling_rights |= WHITE_OOO; break;
-        case 'k': this->castling_rights |= BLACK_OO; break;
-        case 'q': this->castling_rights |= BLACK_OOO; break;
-        case '-': break;
-        default: break; // FRC or error
+        if (c == '-')
+        {
+            break;
+        }
+        else if (!castling::is_frc)
+        {
+            switch (c) {
+            case 'K': this->castling_rights |= WHITE_OO; break;
+            case 'Q': this->castling_rights |= WHITE_OOO; break;
+            case 'k': this->castling_rights |= BLACK_OO; break;
+            case 'q': this->castling_rights |= BLACK_OOO; break;
+            default: break;
+            }
+        }
+        else // TODO: Fischer Random Chess
+        {
         }
     }
 
@@ -241,10 +237,10 @@ u64 Position::perft(u32 depth, bool root)
         if (!pos.make_move(move))
             continue;
         u64 count = pos.perft(depth - 1, false);
+        leaves += count;
         if (root)
             std::cout << get_move_string(move, this->is_flipped()) << ": "
                       << count << std::endl;
-        leaves += count;
     }
 
     return leaves;

@@ -56,8 +56,7 @@ namespace uci
             if (!(stream >> depth))
                 depth = 1;
             u64 count = pos.perft(depth);
-            std::cout << "Perft(" << depth << "): " << count
-                      << std::endl;
+            std::cout << count << std::endl;
         }
 
         void position(Position& pos, std::stringstream& stream)

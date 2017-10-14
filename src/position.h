@@ -27,6 +27,7 @@
 
 namespace castling
 {
+    extern bool is_frc;
     extern u32 rook_sqs[2];
     extern u8 spoilers[64];
 }
@@ -45,6 +46,8 @@ public:
     std::uint8_t get_castling_rights();
     std::uint8_t get_half_moves();
     bool is_flipped();
+    bool is_kingside(u32 sq, u32 c);
+    bool is_queenside(u32 sq, u32 c);
     u32 get_ep_sq();
     u64 get_hash_key();
     u64 occupancy_bb();
@@ -89,6 +92,8 @@ inline u64 Position::get_hash_key() { return this->hash_keys.back(); }
 inline std::uint8_t Position::get_castling_rights() { return this->castling_rights; }
 inline std::uint8_t Position::get_half_moves() { return this->half_moves; }
 inline bool Position::is_flipped() { return this->flipped; }
+inline bool Position::is_kingside(u32 sq, u32 c) { return sq > this->position_of(KING, c); }
+inline bool Position::is_queenside(u32 sq, u32 c) { return sq < this->position_of(KING, c); }
 inline u32 Position::get_ep_sq() { return this->ep_sq; }
 inline u64 Position::occupancy_bb() { return this->color_bb(US) ^ this->color_bb(THEM); }
 inline u64 Position::piece_bb(u32 pt) { return this->bb[pt]; }
