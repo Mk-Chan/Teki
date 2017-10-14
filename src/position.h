@@ -60,6 +60,7 @@ public:
     //u64 get_hash();
     u64 attackers_to(u32 sq);
     u64 attackers_to(u32 sq, u32 by_side);
+    u64 in_check(u32 side);
 
     // Operations
     bool make_move(Move move);

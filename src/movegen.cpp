@@ -132,8 +132,8 @@ std::vector<u32> Position::get_movelist()
         static u32 const king_end_pos[2] = { G1, C1 };
         static u32 const rook_end_pos[2] = { F1, D1 };
 
-        u32 ksq = this->position_of(KING, US);
-        if (!this->attackers_to(ksq, THEM)) {
+        if (!this->in_check(US)) {
+            u32 ksq = this->position_of(KING, US);
             for (u32 i = KINGSIDE; i <= QUEENSIDE; ++i) {
                 if (castling_side[i] & this->castling_rights) {
                     u32 king_end_sq = king_end_pos[i],

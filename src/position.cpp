@@ -225,6 +225,11 @@ u64 Position::attackers_to(u32 sq, u32 by_side)
     return this->attackers_to(sq) & this->color_bb(by_side);
 }
 
+u64 Position::in_check(u32 side)
+{
+        return attackers_to(this->position_of(KING, side), !side);
+}
+
 u64 Position::perft(u32 depth, bool root)
 {
     if (depth == 0)

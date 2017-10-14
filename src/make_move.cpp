@@ -120,7 +120,7 @@ bool Position::make_move(Move move)
             break;
     }
 
-    if (attackers_to(position_of(KING, US), THEM))
+    if (this->in_check(US))
         return false;
 
     this->flip();
