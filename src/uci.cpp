@@ -66,8 +66,15 @@ namespace handler
         u32 depth;
         if (!(stream >> depth))
             depth = 1;
-        u64 count = pos.perft(depth);
-        std::cout << count << std::endl;
+
+        u64 count;
+        for (u32 d = 1; d <= depth; ++d) {
+            count = pos.perft(d);
+            std::cout << "info depth " << d
+                      << " nodes " << count
+                      << std::endl;
+        }
+        std::cout << "nodes " << count << std::endl;
     }
 
     void position(Position& pos, std::stringstream& stream)
