@@ -1,7 +1,7 @@
 ENGINE_NAME = Teki
 UCI_NAME = "\"$(ENGINE_NAME)\""
 
-CXX = g++
+CXX = clang++
 CXXFLAGS = -std=c++11 -Wall -pipe $(EXTRAFLAGS) -DNAME=$(UCI_NAME)
 LDFLAGS = -Wl,--no-as-needed $(CXXFLAGS)
 

@@ -271,10 +271,10 @@ namespace lookups
         u64 sw_blockers = (southwest(square) & occupancy) | BB(A1);
         u64 se_blockers = (southeast(square) & occupancy) | BB(H1);
 
-        atk &= ~northwest(fbitscan(nw_blockers));
-        atk &= ~northeast(fbitscan(ne_blockers));
-        atk &= ~southwest(rbitscan(sw_blockers));
-        atk &= ~southeast(rbitscan(se_blockers));
+        atk ^= northwest(fbitscan(nw_blockers));
+        atk ^= northeast(fbitscan(ne_blockers));
+        atk ^= southwest(rbitscan(sw_blockers));
+        atk ^= southeast(rbitscan(se_blockers));
 
         return atk;
     }
@@ -287,10 +287,10 @@ namespace lookups
         u64 w_blockers = (west(square) & occupancy) | BB(A1);
         u64 e_blockers = (east(square) & occupancy) | BB(H8);
 
-        atk &= ~north(fbitscan(n_blockers));
-        atk &= ~south(rbitscan(s_blockers));
-        atk &= ~west(rbitscan(w_blockers));
-        atk &= ~east(fbitscan(e_blockers));
+        atk ^= north(fbitscan(n_blockers));
+        atk ^= south(rbitscan(s_blockers));
+        atk ^= west(rbitscan(w_blockers));
+        atk ^= east(fbitscan(e_blockers));
 
         return atk;
     }
@@ -307,14 +307,14 @@ namespace lookups
         u64 w_blockers = (west(square) & occupancy) | BB(A1);
         u64 e_blockers = (east(square) & occupancy) | BB(H8);
 
-        atk &= ~northwest(fbitscan(nw_blockers));
-        atk &= ~northeast(fbitscan(ne_blockers));
-        atk &= ~southwest(rbitscan(sw_blockers));
-        atk &= ~southeast(rbitscan(se_blockers));
-        atk &= ~north(fbitscan(n_blockers));
-        atk &= ~south(rbitscan(s_blockers));
-        atk &= ~west(rbitscan(w_blockers));
-        atk &= ~east(fbitscan(e_blockers));
+        atk ^= northwest(fbitscan(nw_blockers));
+        atk ^= northeast(fbitscan(ne_blockers));
+        atk ^= southwest(rbitscan(sw_blockers));
+        atk ^= southeast(rbitscan(se_blockers));
+        atk ^= north(fbitscan(n_blockers));
+        atk ^= south(rbitscan(s_blockers));
+        atk ^= west(rbitscan(w_blockers));
+        atk ^= east(fbitscan(e_blockers));
 
         return atk;
     }
