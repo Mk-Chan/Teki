@@ -64,32 +64,32 @@ void init_non_sliders()
         pawn_attacks[US][sq] = pawn_attacks[THEM][sq] = 0;
 
         // Pawn attacks
-        pawn_attacks[US][sq] |= ((BB(sq + 7) & ~FILE_H_MASK)
-                               | (BB(sq + 9) & ~FILE_A_MASK))
+        pawn_attacks[US][sq] |= ((sBB(sq + 7) & ~FILE_H_MASK)
+                               | (sBB(sq + 9) & ~FILE_A_MASK))
                                & ~RANK_1_MASK;
-        pawn_attacks[THEM][sq] |= ((BB(sq - 7) & ~FILE_A_MASK)
-                                 | (BB(sq - 9) & ~FILE_H_MASK))
+        pawn_attacks[THEM][sq] |= ((sBB(sq - 7) & ~FILE_A_MASK)
+                                 | (sBB(sq - 9) & ~FILE_H_MASK))
                                  & ~RANK_8_MASK;
 
         // Knight attacks
-        knight_attacks[sq] |= BB(sq + 17) & ~(FILE_A_MASK | RANK_2_MASK | RANK_1_MASK);
-        knight_attacks[sq] |= BB(sq + 15) & ~(FILE_H_MASK | RANK_2_MASK | RANK_1_MASK);
-        knight_attacks[sq] |= BB(sq - 17) & ~(FILE_H_MASK | RANK_7_MASK | RANK_8_MASK);
-        knight_attacks[sq] |= BB(sq - 15) & ~(FILE_A_MASK | RANK_7_MASK | RANK_8_MASK);
-        knight_attacks[sq] |= BB(sq - 10) & ~(FILE_H_MASK | FILE_G_MASK | RANK_8_MASK);
-        knight_attacks[sq] |= BB(sq + 6)  & ~(FILE_H_MASK | FILE_G_MASK | RANK_1_MASK);
-        knight_attacks[sq] |= BB(sq + 10) & ~(FILE_A_MASK | FILE_B_MASK | RANK_1_MASK);
-        knight_attacks[sq] |= BB(sq - 6)  & ~(FILE_A_MASK | FILE_B_MASK | RANK_8_MASK);
+        knight_attacks[sq] |= sBB(sq + 17) & ~(FILE_A_MASK | RANK_2_MASK | RANK_1_MASK);
+        knight_attacks[sq] |= sBB(sq + 15) & ~(FILE_H_MASK | RANK_2_MASK | RANK_1_MASK);
+        knight_attacks[sq] |= sBB(sq - 17) & ~(FILE_H_MASK | RANK_7_MASK | RANK_8_MASK);
+        knight_attacks[sq] |= sBB(sq - 15) & ~(FILE_A_MASK | RANK_7_MASK | RANK_8_MASK);
+        knight_attacks[sq] |= sBB(sq - 10) & ~(FILE_H_MASK | FILE_G_MASK | RANK_8_MASK);
+        knight_attacks[sq] |= sBB(sq + 6)  & ~(FILE_H_MASK | FILE_G_MASK | RANK_1_MASK);
+        knight_attacks[sq] |= sBB(sq + 10) & ~(FILE_A_MASK | FILE_B_MASK | RANK_1_MASK);
+        knight_attacks[sq] |= sBB(sq - 6)  & ~(FILE_A_MASK | FILE_B_MASK | RANK_8_MASK);
 
         // King attacks
-        king_attacks[sq] |= BB(sq + 8) & ~RANK_1_MASK;
-        king_attacks[sq] |= BB(sq - 8) & ~RANK_8_MASK;
-        king_attacks[sq] |= BB(sq + 1) & ~FILE_A_MASK;
-        king_attacks[sq] |= BB(sq - 1) & ~FILE_H_MASK;
-        king_attacks[sq] |= BB(sq + 9) & ~(FILE_A_MASK | RANK_1_MASK);
-        king_attacks[sq] |= BB(sq - 9) & ~(FILE_H_MASK | RANK_8_MASK);
-        king_attacks[sq] |= BB(sq + 7) & ~(FILE_H_MASK | RANK_1_MASK);
-        king_attacks[sq] |= BB(sq - 7) & ~(FILE_A_MASK | RANK_8_MASK);
+        king_attacks[sq] |= sBB(sq + 8) & ~RANK_1_MASK;
+        king_attacks[sq] |= sBB(sq - 8) & ~RANK_8_MASK;
+        king_attacks[sq] |= sBB(sq + 1) & ~FILE_A_MASK;
+        king_attacks[sq] |= sBB(sq - 1) & ~FILE_H_MASK;
+        king_attacks[sq] |= sBB(sq + 9) & ~(FILE_A_MASK | RANK_1_MASK);
+        king_attacks[sq] |= sBB(sq - 9) & ~(FILE_H_MASK | RANK_8_MASK);
+        king_attacks[sq] |= sBB(sq + 7) & ~(FILE_H_MASK | RANK_1_MASK);
+        king_attacks[sq] |= sBB(sq - 7) & ~(FILE_A_MASK | RANK_8_MASK);
     }
 }
 
