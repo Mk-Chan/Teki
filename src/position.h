@@ -66,6 +66,7 @@ public:
     bool make_move(Move move);
     std::vector<u32> get_movelist();
     u64 perft(u32 depth, bool root=true);
+    Move best_move();
 
 private:
     // Internal operations

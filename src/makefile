@@ -5,7 +5,7 @@ CXX = clang++
 CXXFLAGS = -std=c++11 -Wall -pipe $(EXTRAFLAGS) -DNAME=$(UCI_NAME)
 LDFLAGS = -Wl,--no-as-needed $(CXXFLAGS)
 
-OBJS = main.o uci.o bitboard.o position.o movegen.o make_move.o
+OBJS = main.o uci.o bitboard.o position.o movegen.o make_move.o search.o
 
 BINDIR = /usr/local/bin
 

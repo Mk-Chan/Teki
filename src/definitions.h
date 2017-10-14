@@ -86,7 +86,7 @@ inline u32 popcnt(u64 bb) { return __builtin_popcountll(bb); }
 inline u32 fbitscan(u64 bb) { return __builtin_ctzll(bb); }
 inline u32 rbitscan(u64 bb) { return 63 - __builtin_clzll(bb); }
 
-inline u64 BB(u32 shift) { return u64(1) << shift; }
+inline u64 BB(u32 shift) { return shift < 64 ? u64(1) << shift : 0; }
 extern void print_bb(u64 bb);
 
 #endif

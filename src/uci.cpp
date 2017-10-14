@@ -43,6 +43,7 @@ namespace handler
     {
         std::cout << "id name " << NAME << '\n'
                   << "id author " << AUTHOR << std::endl;
+        std::cout << "uciok" << std::endl;
     }
 
     void d(Position& pos)
@@ -90,6 +91,13 @@ namespace handler
                 pos.make_move(get_parsed_move(pos, move_str));
         }
     }
+
+    void go(Position& pos, std::stringstream& stream)
+    {
+        Move move = pos.best_move();
+        std::cout << "bestmove " << get_move_string(move, pos.is_flipped())
+                  << std::endl;
+    }
 }
 
 void loop()
@@ -109,6 +117,7 @@ void loop()
         else if (word == "isready") handler::isready();
         else if (word == "perft") handler::perft(pos, stream);
         else if (word == "position") handler::position(pos, stream);
+        else if (word == "go") handler::go(pos, stream);
         else if (word == "quit") break;
     }
 }
