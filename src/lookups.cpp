@@ -18,7 +18,13 @@
 
 #include <iostream>
 #include "definitions.h"
-#include "bitboard.h"
+#include "lookups.h"
+#include "utils.h"
+
+u64 psq_keys_bb[2][6][64];
+u64 castle_keys_bb[16];
+u64 ep_keys_bb[64];
+u64 stm_key_bb;
 
 u32 distance_val[64][64];
 u64 ahead_bb[64];
@@ -27,6 +33,7 @@ u64 ray_bb[64][64];
 u64 xray_bb[64][64];
 u64 full_ray_bb[64][64];
 u64 intervening_ray_bb[64][64];
+
 u64 pawn_attacks[2][64];
 u64 knight_attacks[64];
 u64 bishop_attacks[64];
@@ -231,6 +238,24 @@ void init_directions()
     }
 }
 
+void init_keys()
+{
+    for (u32 c = WHITE; c <= BLACK; ++c) {
+        for (u32 pt = PAWN; pt <= KING; ++pt) {
+            for (u32 sq = A1; sq <= H8; ++sq) {
+                psq_keys_bb[c][pt][sq] = utils::random_num<u64>(0, UINT64_MAX);
+            }
+        }
+    }
+    for (u32 sq = A1; sq <= H8; ++sq) {
+        ep_keys_bb[sq] = utils::random_num<u64>(0, UINT64_MAX);
+    }
+    for (u32 cr = 0; cr <= 16; ++cr) {
+        castle_keys_bb[cr] = utils::random_num<u64>(0, UINT64_MAX);
+    }
+    stm_key_bb = utils::random_num<u64>(0, UINT64_MAX);
+}
+
 namespace lookups
 {
     void init()
@@ -239,7 +264,13 @@ namespace lookups
         init_directions();
         init_pseudo_sliders();
         init_misc();
+        init_keys();
     }
+
+    u64 psq_key(u32 c, u32 pt, u32 sq) { return psq_keys_bb[c][pt][sq]; }
+    u64 castle_key(u32 rights) { return castle_keys_bb[rights]; }
+    u64 ep_key(u32 sq) { return ep_keys_bb[sq]; }
+    u64 stm_key() { return stm_key_bb; }
 
     u32 distance(u32 from, u32 to) { return distance_val[from][to]; }
     u64 ray(u32 from, u32 to) { return ray_bb[from][to]; }
@@ -248,6 +279,7 @@ namespace lookups
     u64 intervening_sqs(u32 from, u32 to) { return intervening_ray_bb[from][to]; }
     u64 ahead(u32 square) { return ahead_bb[square]; }
     u64 behind(u32 square) { return behind_bb[square]; }
+
     u64 north(u32 square) { return north_bb[square]; }
     u64 south(u32 square) { return south_bb[square]; }
     u64 east(u32 square) { return east_bb[square]; }
@@ -256,6 +288,7 @@ namespace lookups
     u64 northwest(u32 square) { return northwest_bb[square]; }
     u64 southeast(u32 square) { return southeast_bb[square]; }
     u64 southwest(u32 square) { return southwest_bb[square]; }
+
     u64 pawn(u32 square, u32 side) { return pawn_attacks[side][square]; }
     u64 knight(u32 square) { return knight_attacks[square]; }
     u64 bishop(u32 square) { return bishop_attacks[square]; }

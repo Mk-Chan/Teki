@@ -19,11 +19,12 @@
 #ifndef POSITION_H
 #define POSITION_H
 
-#include "definitions.h"
 #include <iostream>
 #include <string>
 #include <sstream>
 #include <vector>
+#include "definitions.h"
+#include "lookups.h"
 
 namespace castling
 {
@@ -43,13 +44,13 @@ public:
     void display();
 
     // Getters
+    u64 hash_key() const;
     std::uint8_t get_castling_rights() const;
     std::uint8_t get_half_moves() const;
     bool is_flipped() const;
     bool is_kingside(u32 sq, u32 c) const;
     bool is_queenside(u32 sq, u32 c) const;
     u32 get_ep_sq() const;
-    u64 get_hash_key() const;
     u64 occupancy_bb() const;
     u64 piece_bb(u32 pt) const;
     u64 color_bb(u32 c) const;
@@ -57,7 +58,6 @@ public:
     u32 piece_on(u32 sq) const;
     bool check_piece_on(u32 sq, u32 pt) const;
     u32 position_of(u32 pt, u32 c) const;
-    //u64 get_hash();
     u64 attackers_to(u32 sq) const;
     u64 attackers_to(u32 sq, u32 by_side) const;
     u64 in_check(u32 side) const;
@@ -77,6 +77,7 @@ private:
     void put_piece(u32 sq, u32 pt, u32 c);
     void remove_piece(u32 sq, u32 pt, u32 c);
     void move_piece(u32 from, u32 to, u32 pt, u32 c);
+    u64 calc_hash();
 
     // Data members
     u64 bb[6];
@@ -90,7 +91,8 @@ private:
 
 inline Position::Position() { this->clear(); }
 
-inline u64 Position::get_hash_key() const { return this->hash_keys.back(); }
+
+inline u64 Position::hash_key() const { return this->hash_keys.back(); }
 inline std::uint8_t Position::get_castling_rights() const { return this->castling_rights; }
 inline std::uint8_t Position::get_half_moves() const { return this->half_moves; }
 inline bool Position::is_flipped() const { return this->flipped; }
@@ -113,6 +115,7 @@ inline void Position::put_piece(u32 sq, u32 pt, u32 c)
     u64 bb = BB(sq);
     this->bb[pt] ^= bb;
     this->color[c] ^= bb;
+    this->hash_keys.back() ^= lookups::psq_key(c, pt, sq);
 }
 
 inline void Position::remove_piece(u32 sq, u32 pt, u32 c)
@@ -121,6 +124,7 @@ inline void Position::remove_piece(u32 sq, u32 pt, u32 c)
     assert(this->bb[pt] & this->color[c] & bb);
     this->bb[pt] ^= bb;
     this->color[c] ^= bb;
+    this->hash_keys.back() ^= lookups::psq_key(c, pt, sq);
 }
 
 inline void Position::move_piece(u32 from, u32 to, u32 pt, u32 c)
@@ -129,6 +133,8 @@ inline void Position::move_piece(u32 from, u32 to, u32 pt, u32 c)
     u64 bb = BB(from) ^ BB(to);
     this->bb[pt] ^= bb;
     this->color[c] ^= bb;
+    this->hash_keys.back() ^= lookups::psq_key(c, pt, from)
+                            ^ lookups::psq_key(c, pt, to);
 }
 
 #endif

@@ -18,7 +18,7 @@
 
 #include "position.h"
 #include "move.h"
-#include "bitboard.h"
+#include "lookups.h"
 
 namespace castling
 {
@@ -53,13 +53,14 @@ void Position::flip()
     this->color[1] = this->color[0];
     this->color[0] = tmp_color;
 
-    this->flipped = !this->flipped;
     if (this->ep_sq != INVALID_SQ)
         this->ep_sq ^= 56;
 
     std::uint8_t tmp_cr = (this->castling_rights & 3) << 2;
     this->castling_rights >>= 2;
     this->castling_rights ^= tmp_cr;
+
+    this->flipped = !this->flipped;
 }
 
 u32 Position::piece_on(u32 sq) const
@@ -90,7 +91,9 @@ void Position::display()
             std::cout << piece_char(piece, color) << " ";
         }
     }
-    std::cout << std::endl;
+    std::cout << "\n"
+              << "Zobrist key: " << this->hash_keys.back()
+              << std::endl;
 }
 
 void Position::clear()
@@ -103,6 +106,7 @@ void Position::clear()
     this->ep_sq = INVALID_SQ;
     this->castling_rights = 0;
     this->half_moves = 0;
+    this->hash_keys.clear();
     this->hash_keys.reserve(100);
 }
 
@@ -211,6 +215,8 @@ void Position::init(std::stringstream& stream)
 
     if (need_to_flip)
         this->flip();
+
+    this->hash_keys.push_back(calc_hash());
 }
 
 u64 Position::attackers_to(u32 sq) const
@@ -232,6 +238,36 @@ u64 Position::attackers_to(u32 sq, u32 by_side) const
 u64 Position::in_check(u32 side) const
 {
         return attackers_to(this->position_of(KING, side), !side);
+}
+
+u64 Position::calc_hash()
+{
+    bool flipped = this->is_flipped();
+    if (flipped)
+        this->flip();
+
+    u64 hash_key = u64(0);
+    for (u32 c = WHITE; c <= BLACK; ++c) {
+        for (u32 pt = PAWN; pt <= KING; ++pt) {
+            u64 bb = this->piece_bb(pt, c);
+            while (bb) {
+                hash_key ^= lookups::psq_key(c, pt, fbitscan(bb));
+                bb &= bb - 1;
+            }
+        }
+    }
+
+    if (this->ep_sq != INVALID_SQ)
+        hash_key ^= lookups::ep_key(this->ep_sq);
+
+    hash_key ^= lookups::castle_key(this->castling_rights);
+
+    if (flipped) {
+        hash_key ^= lookups::stm_key();
+        this->flip();
+    }
+
+    return hash_key;
 }
 
 u64 Position::perft(u32 depth, bool root)

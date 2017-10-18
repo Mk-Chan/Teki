@@ -19,7 +19,7 @@
 #include <iostream>
 #include <string>
 #include "uci.h"
-#include "bitboard.h"
+#include "lookups.h"
 
 int main()
 {

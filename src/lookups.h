@@ -16,8 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef BITBOARD_H
-#define BITBOARD_H
+#ifndef LOOKUPS_H
+#define LOOKUPS_H
 
 #include "definitions.h"
 
@@ -42,6 +42,12 @@
 namespace lookups
 {
     extern void init();
+
+    extern u64 psq_key(u32 c, u32 pt, u32 sq);
+    extern u64 castle_key(u32 rights);
+    extern u64 ep_key(u32 sq);
+    extern u64 stm_key();
+
     extern u32 distance(u32 from, u32 to);
     extern u64 ray(u32 from, u32 to);
     extern u64 xray(u32 from, u32 to);
@@ -49,6 +55,16 @@ namespace lookups
     extern u64 intervening_sqs(u32 from, u32 to);
     extern u64 ahead(u32 square);
     extern u64 behind(u32 square);
+
+    extern u64 north(u32 square);
+    extern u64 south(u32 square);
+    extern u64 east(u32 square);
+    extern u64 west(u32 square);
+    extern u64 northeast(u32 square);
+    extern u64 northwest(u32 square);
+    extern u64 southeast(u32 square);
+    extern u64 southwest(u32 square);
+
     extern u64 pawn(u32 square, u32 side);
     extern u64 knight(u32 square);
     extern u64 bishop(u32 square);
@@ -59,15 +75,6 @@ namespace lookups
     extern u64 queen(u32 square, u64 occupancy);
     extern u64 king(u32 square);
     extern u64 attacks(u32 piece_type, u32 square, u64 occupancy, u32 side=US);
-
-    extern u64 north(u32 square);
-    extern u64 south(u32 square);
-    extern u64 east(u32 square);
-    extern u64 west(u32 square);
-    extern u64 northeast(u32 square);
-    extern u64 northwest(u32 square);
-    extern u64 southeast(u32 square);
-    extern u64 southwest(u32 square);
 }
 
 #endif

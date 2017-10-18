@@ -16,8 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MISC_H
-#define MISC_H
+#ifndef UTILS_H
+#define UTILS_H
 
 #include <chrono>
 #include <random>
@@ -38,8 +38,7 @@ namespace utils
     template<typename T>
     inline T random_num(T low_incl, T high_incl)
     {
-        static std::random_device rd;
-        static std::mt19937 rng(rd());
+        static std::mt19937_64 rng(88349201835);
         static std::uniform_int_distribution<T> uni(low_incl, high_incl);
         return uni(rng);
     }

@@ -60,9 +60,11 @@ bool Position::make_move(Move move)
     u32 from = from_sq(move),
         to = to_sq(move);
 
-    this->ep_sq = INVALID_SQ;
-    this->castling_rights &= castling::spoilers[from];
-    this->castling_rights &= castling::spoilers[to];
+    if (this->ep_sq != INVALID_SQ)
+        this->ep_sq = INVALID_SQ;
+
+    this->castling_rights &= castling::spoilers[from]
+                           & castling::spoilers[to];
 
     if (this->check_piece_on(from, PAWN))
         this->reset_half_moves();
@@ -124,7 +126,8 @@ bool Position::make_move(Move move)
         return false;
 
     this->flip();
-    //this->hash_keys.push_back(this->get_hash());
+
+    this->hash_keys.push_back(this->calc_hash());
 
     return true;
 }

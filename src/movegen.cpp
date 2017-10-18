@@ -18,7 +18,7 @@
 
 #include "position.h"
 #include "move.h"
-#include "bitboard.h"
+#include "lookups.h"
 
 static inline void add_move(u32 move, std::vector<u32>& mlist)
 {
