@@ -23,6 +23,7 @@
 #include "uci.h"
 #include "position.h"
 #include "move.h"
+#include "misc.h"
 
 #define INITIAL_POSITION ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
@@ -69,8 +70,11 @@ namespace handler
 
         u64 count;
         for (u32 d = 1; d <= depth; ++d) {
+            time_ms t1 = utils::curr_time();
             count = pos.perft(d);
+            time_ms t2 = utils::curr_time();
             std::cout << "info depth " << d
+                      << " time " << (t2 - t1)
                       << " nodes " << count
                       << std::endl;
         }
