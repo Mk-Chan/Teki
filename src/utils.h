@@ -21,6 +21,9 @@
 
 #include <chrono>
 #include <random>
+#include <cinttypes>
+#include <vector>
+#include <algorithm>
 
 using std::chrono::milliseconds;
 
@@ -35,12 +38,25 @@ namespace utils
         ).count();
     }
 
-    template<typename T>
-    inline T random_num(T low_incl, T high_incl)
+    inline std::uint64_t rand_u64(std::uint64_t low_incl, std::uint64_t high_incl)
     {
         static std::mt19937_64 rng(88349201835);
-        static std::uniform_int_distribution<T> uni(low_incl, high_incl);
+        std::uniform_int_distribution<std::uint64_t> uni(low_incl, high_incl);
         return uni(rng);
+    }
+
+    inline std::uint32_t rand_u32(std::uint32_t low_incl, std::uint32_t high_incl)
+    {
+        std::random_device rd;
+        std::mt19937 rng(rd());
+        std::uniform_int_distribution<std::uint32_t> uni(low_incl, high_incl);
+        return uni(rng);
+    }
+
+    template<typename T>
+    inline void remove_from_vec(T& val, std::vector<T>& vec)
+    {
+        vec.erase(std::remove(vec.begin(), vec.end(), val), vec.end());
     }
 }
 

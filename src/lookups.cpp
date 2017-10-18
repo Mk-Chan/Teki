@@ -243,17 +243,17 @@ void init_keys()
     for (u32 c = WHITE; c <= BLACK; ++c) {
         for (u32 pt = PAWN; pt <= KING; ++pt) {
             for (u32 sq = A1; sq <= H8; ++sq) {
-                psq_keys_bb[c][pt][sq] = utils::random_num<u64>(0, UINT64_MAX);
+                psq_keys_bb[c][pt][sq] = utils::rand_u64(0, UINT64_MAX);
             }
         }
     }
     for (u32 sq = A1; sq <= H8; ++sq) {
-        ep_keys_bb[sq] = utils::random_num<u64>(0, UINT64_MAX);
+        ep_keys_bb[sq] = utils::rand_u64(0, UINT64_MAX);
     }
     for (u32 cr = 0; cr <= 16; ++cr) {
-        castle_keys_bb[cr] = utils::random_num<u64>(0, UINT64_MAX);
+        castle_keys_bb[cr] = utils::rand_u64(0, UINT64_MAX);
     }
-    stm_key_bb = utils::random_num<u64>(0, UINT64_MAX);
+    stm_key_bb = utils::rand_u64(0, UINT64_MAX);
 }
 
 namespace lookups

@@ -19,23 +19,20 @@
 #include <random>
 #include "position.h"
 #include "move.h"
+#include "utils.h"
 
 Move Position::best_move()
 {
     // Return a random move for now
     std::vector<Move> mlist = this->get_movelist();
-    std::random_device rd;
-    std::mt19937 rng(rd());
-    std::uniform_int_distribution<int> uni(0, mlist.size() - 1);
-
-    Move move;
-    while (true) {
+    while (mlist.size()) {
         Position tmp = *this;
-        u32 r = uni(rng);
-        move = mlist[r];
+        u32 r = utils::rand_u32(0, mlist.size() - 1);
+        Move move = mlist[r];
         if (tmp.make_move(move))
-            break;
+            return move;
+        utils::remove_from_vec(move, mlist);
     }
 
-    return move;
+    return 0;
 }
