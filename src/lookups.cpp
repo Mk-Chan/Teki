@@ -250,7 +250,7 @@ void init_keys()
     for (u32 sq = A1; sq <= H8; ++sq) {
         ep_keys_bb[sq] = utils::rand_u64(0, UINT64_MAX);
     }
-    for (u32 cr = 0; cr <= 16; ++cr) {
+    for (u32 cr = 0; cr < 16; ++cr) {
         castle_keys_bb[cr] = utils::rand_u64(0, UINT64_MAX);
     }
     stm_key_bb = utils::rand_u64(0, UINT64_MAX);
