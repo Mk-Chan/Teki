@@ -32,4 +32,4 @@ uninstall:
 	-rm -f $(BINDIR)/$(EXE)
 
 clean:
-	-rm -f $(OBJS) $(EXE)
+	-rm -f $(OBJS) teki*

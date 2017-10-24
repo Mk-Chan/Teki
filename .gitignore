@@ -4,6 +4,12 @@
 # Executables
 teki
 
+# Scripts
+*.sh
+
+# Folders
+exes
+
 # Misc. files
 .ycm_extra_conf.py
 .lvimrc

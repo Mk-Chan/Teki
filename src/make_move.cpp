@@ -60,6 +60,8 @@ bool Position::make_move(Move move)
     u32 from = from_sq(move),
         to = to_sq(move);
 
+    this->prev_hash_keys.push_back(this->hash_key);
+
     if (this->ep_sq != INVALID_SQ)
         this->ep_sq = INVALID_SQ;
 
@@ -127,7 +129,7 @@ bool Position::make_move(Move move)
 
     this->flip();
 
-    this->hash_keys.push_back(this->calc_hash());
+    this->hash_key = this->calc_hash();
 
     return true;
 }

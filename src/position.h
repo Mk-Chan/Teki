@@ -44,7 +44,7 @@ public:
     void display();
 
     // Getters
-    u64 hash_key() const;
+    u64 get_hash_key() const;
     std::uint8_t get_castling_rights() const;
     std::uint8_t get_half_moves() const;
     bool is_flipped() const;
@@ -86,13 +86,13 @@ private:
     u32 ep_sq;
     std::uint8_t castling_rights;
     std::uint8_t half_moves;
-    std::vector<u64> hash_keys;
+    u64 hash_key;
+    std::vector<u64> prev_hash_keys;
 };
 
 inline Position::Position() { this->clear(); }
 
-
-inline u64 Position::hash_key() const { return this->hash_keys.back(); }
+inline u64 Position::get_hash_key() const { return this->hash_key; }
 inline std::uint8_t Position::get_castling_rights() const { return this->castling_rights; }
 inline std::uint8_t Position::get_half_moves() const { return this->half_moves; }
 inline bool Position::is_flipped() const { return this->flipped; }
@@ -115,7 +115,7 @@ inline void Position::put_piece(u32 sq, u32 pt, u32 c)
     u64 bb = BB(sq);
     this->bb[pt] ^= bb;
     this->color[c] ^= bb;
-    this->hash_keys.back() ^= lookups::psq_key(c, pt, sq);
+    this->hash_key ^= lookups::psq_key(c, pt, sq);
 }
 
 inline void Position::remove_piece(u32 sq, u32 pt, u32 c)
@@ -124,7 +124,7 @@ inline void Position::remove_piece(u32 sq, u32 pt, u32 c)
     assert(this->bb[pt] & this->color[c] & bb);
     this->bb[pt] ^= bb;
     this->color[c] ^= bb;
-    this->hash_keys.back() ^= lookups::psq_key(c, pt, sq);
+    this->hash_key ^= lookups::psq_key(c, pt, sq);
 }
 
 inline void Position::move_piece(u32 from, u32 to, u32 pt, u32 c)
@@ -133,8 +133,8 @@ inline void Position::move_piece(u32 from, u32 to, u32 pt, u32 c)
     u64 bb = BB(from) ^ BB(to);
     this->bb[pt] ^= bb;
     this->color[c] ^= bb;
-    this->hash_keys.back() ^= lookups::psq_key(c, pt, from)
-                            ^ lookups::psq_key(c, pt, to);
+    this->hash_key ^= lookups::psq_key(c, pt, from)
+                    ^ lookups::psq_key(c, pt, to);
 }
 
 #endif

@@ -92,7 +92,7 @@ void Position::display()
         }
     }
     std::cout << "\n"
-              << "Zobrist key: " << this->hash_keys.back()
+              << "Zobrist key: " << this->hash_key
               << std::endl;
 }
 
@@ -106,8 +106,9 @@ void Position::clear()
     this->ep_sq = INVALID_SQ;
     this->castling_rights = 0;
     this->half_moves = 0;
-    this->hash_keys.clear();
-    this->hash_keys.reserve(100);
+    this->hash_key = 0;
+    this->prev_hash_keys.clear();
+    this->prev_hash_keys.reserve(100);
 }
 
 void Position::init(std::stringstream& stream)
@@ -216,7 +217,7 @@ void Position::init(std::stringstream& stream)
     if (need_to_flip)
         this->flip();
 
-    this->hash_keys.push_back(calc_hash());
+    this->hash_key = this->calc_hash();
 }
 
 u64 Position::attackers_to(u32 sq) const
