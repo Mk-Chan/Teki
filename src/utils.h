@@ -47,8 +47,7 @@ namespace utils
 
     inline std::uint32_t rand_u32(std::uint32_t low_incl, std::uint32_t high_incl)
     {
-        std::random_device rd;
-        std::mt19937 rng(rd());
+        std::mt19937 rng(curr_time());
         std::uniform_int_distribution<std::uint32_t> uni(low_incl, high_incl);
         return uni(rng);
     }
