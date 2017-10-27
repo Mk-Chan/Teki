@@ -78,7 +78,7 @@ enum CastlingRights
     BLACK_OO = 4, BLACK_OOO = 8
 };
 
-inline u32 get_sq(u32 rank, u32 file) { return (rank << 3) ^ file; }
+inline u32 get_sq(u32 file, u32 rank) { return (rank << 3) ^ file; }
 inline u32 rank_of(u32 sq) { return sq >> 3; }
 inline u32 file_of(u32 sq) { return sq & 7; }
 
