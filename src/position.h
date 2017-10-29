@@ -61,12 +61,12 @@ public:
     u64 attackers_to(u32 sq) const;
     u64 attackers_to(u32 sq, u32 by_side) const;
     u64 in_check(u32 side) const;
+    std::vector<u32> get_movelist() const;
 
     // Operations
+    u64 perft(u32 depth, bool root=true) const;
+    Move best_move() const;
     bool make_move(Move move);
-    std::vector<u32> get_movelist();
-    u64 perft(u32 depth, bool root=true);
-    Move best_move();
 
 private:
     // Internal operations

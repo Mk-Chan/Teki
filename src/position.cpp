@@ -271,7 +271,7 @@ u64 Position::calc_hash()
     return hash_key;
 }
 
-u64 Position::perft(u32 depth, bool root)
+u64 Position::perft(u32 depth, bool root) const
 {
     if (depth == 0)
         return u64(1);

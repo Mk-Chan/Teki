@@ -21,7 +21,7 @@
 #include "move.h"
 #include "utils.h"
 
-Move Position::best_move()
+Move Position::best_move() const
 {
     // Return a random move for now
     std::vector<Move> mlist = this->get_movelist();
