@@ -68,7 +68,7 @@ namespace handler
         if (!(stream >> depth))
             depth = 1;
 
-        u64 count;
+        u64 count = u64(1);
         for (u32 d = 1; d <= depth; ++d) {
             time_ms t1 = utils::curr_time();
             count = pos.perft(d);

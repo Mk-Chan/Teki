@@ -42,7 +42,7 @@ static inline void extract_captures(const Position& pos, u32 from, u64 bb, std::
     }
 }
 
-std::vector<u32> Position::get_movelist() const
+std::vector<Move> Position::get_movelist() const
 {
     std::vector<Move> mlist;
     mlist.reserve(218);
