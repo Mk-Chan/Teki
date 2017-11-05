@@ -61,11 +61,15 @@ public:
     u64 attackers_to(u32 sq) const;
     u64 attackers_to(u32 sq, u32 by_side) const;
     u64 in_check(u32 side) const;
-    std::vector<Move> get_movelist() const;
+    void generate_movelist(std::vector<Move>& mlist) const;
+    void generate_quiesce_movelist(std::vector<Move>& mlist) const;
 
     // Operations
+    void flip();
+    bool is_repetition() const;
     u64 perft(u32 depth, bool root=true) const;
-    Move best_move() const;
+    int evaluate();
+    Move best_move();
     bool make_move(Move move);
 
 private:
@@ -73,7 +77,6 @@ private:
     void clear();
     void inc_half_moves();
     void reset_half_moves();
-    void flip();
     void put_piece(u32 sq, u32 pt, u32 c);
     void remove_piece(u32 sq, u32 pt, u32 c);
     void move_piece(u32 from, u32 to, u32 pt, u32 c);

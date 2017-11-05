@@ -16,24 +16,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UCI_H
-#define UCI_H
+#ifndef TIME_MANAGER_H
+#define TIME_MANAGER_H
 
-#ifndef NAME
-#define NAME ("Teki")
-#endif
-
-#define AUTHOR ("Manik Charan")
-
-#include "move.h"
 #include "utils.h"
 
-namespace uci
+struct TimeManager
 {
-    extern void init();
-    extern void print_currmove(Move move, u32 move_num, time_ms start_time, bool flipped);
-    extern void print_search(int score, int depth, u64 nodes, time_ms time,
-                             std::vector<Move>& pv, bool flipped);
-}
+    time_ms start_time;
+    time_ms end_time;
+} time_manager;
 
 #endif

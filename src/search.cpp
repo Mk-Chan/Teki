@@ -17,22 +17,116 @@
  */
 
 #include <random>
+#include <algorithm>
+
+#include "time_manager.h"
 #include "position.h"
 #include "move.h"
 #include "utils.h"
+#include "uci.h"
 
-Move Position::best_move() const
+struct SearchStack
 {
-    // Return a random move for now
-    std::vector<Move> mlist = this->get_movelist();
-    while (mlist.size()) {
-        Position tmp = *this;
-        u32 r = utils::rand_u32(0, mlist.size() - 1);
-        Move move = mlist[r];
-        if (tmp.make_move(move))
-            return move;
-        utils::remove_from_vec(move, mlist);
+    SearchStack()
+    {
+        mlist.reserve(218);
+        pv.reserve(128);
     }
 
-    return 0;
+    int ply;
+    std::vector<Move> mlist;
+    std::vector<Move> pv;
+};
+
+int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
+{
+    if (depth <= 0)
+    {
+        ss->pv.clear();
+        return pos.evaluate();
+    }
+
+    if (ss->ply)
+    {
+        if (pos.get_half_moves() > 99 || pos.is_repetition())
+            return 0;
+
+        if (ss->ply >= MAX_PLY)
+            return pos.evaluate();
+
+        // Mate distance pruning
+        alpha = std::max((-MATE + ss->ply), alpha);
+        beta  = std::min((MATE - ss->ply), beta);
+        if (alpha >= beta)
+            return alpha;
+    }
+
+    std::vector<Move>& mlist = ss->mlist;
+    mlist.clear();
+    pos.generate_movelist(mlist);
+
+    int best_value = -INFINITY,
+        legal_moves = 0;
+    Move best_move;
+    for (Move move : mlist) {
+        Position child_pos = pos;
+        if (!child_pos.make_move(move))
+            continue;
+
+        ++legal_moves;
+
+        if (!ss->ply)
+            uci::print_currmove(move, legal_moves, time_manager.start_time, pos.is_flipped());
+
+        int value = -search(child_pos, ss + 1, -beta, -alpha, depth - 1);
+
+        if (utils::curr_time() >= time_manager.end_time)
+            return 0;
+
+        if (value > best_value)
+        {
+            best_value = value;
+            best_move = move;
+
+            ss->pv.clear();
+            ss->pv.push_back(move);
+            ss->pv.insert(ss->pv.end(), ss[1].pv.begin(), ss[1].pv.end());
+
+            if (value > alpha)
+            {
+                alpha = value;
+                if (value >= beta)
+                    break;
+            }
+        }
+    }
+
+    if (!legal_moves)
+        return pos.in_check(US) ? -MATE + ss->ply : 0;
+
+    return best_value;
+}
+
+Move Position::best_move()
+{
+    SearchStack search_stack[MAX_PLY];
+    SearchStack* ss = search_stack;
+    for (u32 ply = 0; ply < MAX_PLY; ++ply)
+        search_stack[ply].ply = ply;
+
+    Move best_move;
+    time_manager.start_time = utils::curr_time();
+    for (int depth = 1; depth < MAX_PLY; ++depth) {
+        int score = search(*this, ss, -INFINITY, +INFINITY, depth);
+
+        if (depth > 1 && utils::curr_time() >= time_manager.end_time)
+            break;
+
+        time_ms time_passed = utils::curr_time() - time_manager.start_time;
+        uci::print_search(score, depth, 0, time_passed, ss->pv, is_flipped());
+
+        best_move = ss->pv[0];
+    }
+
+    return best_move;
 }

@@ -16,24 +16,26 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UCI_H
-#define UCI_H
+#include "position.h"
 
-#ifndef NAME
-#define NAME ("Teki")
-#endif
+int piece_value[5] = { 100, 300, 300, 500, 900 };
 
-#define AUTHOR ("Manik Charan")
-
-#include "move.h"
-#include "utils.h"
-
-namespace uci
+int eval_piece_values(const Position& pos)
 {
-    extern void init();
-    extern void print_currmove(Move move, u32 move_num, time_ms start_time, bool flipped);
-    extern void print_search(int score, int depth, u64 nodes, time_ms time,
-                             std::vector<Move>& pv, bool flipped);
+    int value = 0;
+    for (u32 pt = PAWN; pt < KING; ++pt)
+        value += popcnt(pos.piece_bb(pt, US)) * piece_value[pt];
+    return value;
 }
 
-#endif
+int Position::evaluate()
+{
+    int eval = 0;
+    for (u32 side = US; side <= THEM; ++side) {
+        eval += eval_piece_values(*this);
+
+        this->flip();
+        eval = -eval;
+    }
+    return eval;
+}

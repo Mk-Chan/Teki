@@ -20,22 +20,34 @@
 #include <string>
 #include <sstream>
 #include <thread>
+
 #include "uci.h"
 #include "position.h"
-#include "move.h"
-#include "utils.h"
+#include "time_manager.h"
 
 #define INITIAL_POSITION ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
 Move get_parsed_move(Position& pos, std::string& move_str)
 {
-    std::vector<Move> mlist = pos.get_movelist();
+    std::vector<Move> mlist;
+    pos.generate_movelist(mlist);
     for (Move move : mlist) {
         if (get_move_string(move, pos.is_flipped()) == move_str)
             return move;
     }
     std::cout << "CANNOT PARSE MOVE " << move_str << "!" << std::endl;
     return 0;
+}
+
+std::string get_pv_string(std::vector<Move>& pv, bool flipped)
+{
+    std::string pv_string = "";
+    for (int i = 0; i < pv.size(); ++i) {
+        pv_string += get_move_string(pv[i], flipped);
+        if (i != pv.size() - 1)
+            pv_string += " ";
+    }
+    return pv_string;
 }
 
 namespace handler
@@ -139,5 +151,31 @@ namespace uci
     {
         handler::uci();
         loop();
+    }
+
+    void print_currmove(Move move, u32 move_num, time_ms start_time, bool flipped)
+    {
+        time_ms curr_time = utils::curr_time();
+        time_ms time_passed = curr_time - start_time;
+        if (time_passed >= 1000)
+        {
+            std::cout << "info"
+                      << " currmovenumber " << move_num
+                      << " currmove " << get_move_string(move, flipped)
+                      << " time " << time_passed
+                      << std::endl;
+        }
+    }
+
+    void print_search(int score, int depth, u64 nodes, time_ms time,
+                      std::vector<Move>& pv, bool flipped)
+    {
+        std::cout << "info"
+                  << " score cp " << score
+                  << " depth " << depth
+                  << " nodes " << nodes
+                  << " time " << time
+                  << " pv " << get_pv_string(pv, flipped)
+                  << std::endl;
     }
 }

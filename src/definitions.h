@@ -19,6 +19,8 @@
 #ifndef DEFINITIONS_H
 #define DEFINITIONS_H
 
+#undef INFINITY
+
 #include <cassert>
 #include <cinttypes>
 
@@ -27,6 +29,11 @@ typedef std::uint32_t u32;
 typedef std::uint8_t u8;
 typedef std::uint32_t Move;
 typedef std::int32_t i32;
+
+constexpr u32 MAX_PLY = 128;
+constexpr int INFINITY = 30000;
+constexpr int MATE = 29000;
+constexpr int MAX_MATE_VALUE = MATE - MAX_PLY;
 
 enum Color
 {

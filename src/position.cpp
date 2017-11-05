@@ -276,7 +276,9 @@ u64 Position::perft(u32 depth, bool root) const
     if (depth == 0)
         return u64(1);
 
-    std::vector<Move> mlist = this->get_movelist();
+    std::vector<Move> mlist;
+    this->generate_movelist(mlist);
+
     u64 leaves = u64(0);
     for (Move move : mlist) {
         Position pos = *this;
@@ -290,4 +292,14 @@ u64 Position::perft(u32 depth, bool root) const
     }
 
     return leaves;
+}
+
+bool Position::is_repetition() const
+{
+    u64 curr_hash = this->get_hash_key();
+    int num_keys = this->prev_hash_keys.size();
+    for (int i = num_keys - 2; i >= num_keys - this->get_half_moves(); i -= 2)
+        if (prev_hash_keys[i] == curr_hash)
+            return true;
+    return false;
 }
