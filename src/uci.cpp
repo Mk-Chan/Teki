@@ -124,6 +124,9 @@ namespace handler
         controller.time_dependent = false;
         controller.start_time = utils::curr_time();
         controller.end_time = controller.start_time;
+        time_ms time_to_go = 1000;
+        int moves_to_go = 1,
+            increment = 0;
         while (stream >> word) {
             if (word == "infinite")
             {
@@ -134,8 +137,51 @@ namespace handler
                 controller.time_dependent = true;
                 time_ms movetime;
                 stream >> movetime;
-                controller.end_time += movetime;
+                time_to_go = movetime;
+                moves_to_go = 1;
             }
+            else if (word == "wtime")
+            {
+                controller.time_dependent = true;
+                time_ms wtime;
+                stream >> wtime;
+                if (!pos.is_flipped())
+                    time_to_go = wtime;
+            }
+            else if (word == "btime")
+            {
+                controller.time_dependent = true;
+                time_ms btime;
+                stream >> btime;
+                if (pos.is_flipped())
+                    time_to_go = btime;
+            }
+            else if (word == "winc")
+            {
+                controller.time_dependent = true;
+                time_ms winc;
+                stream >> winc;
+                if (!pos.is_flipped())
+                    increment = winc;
+            }
+            else if (word == "binc")
+            {
+                controller.time_dependent = true;
+                time_ms binc;
+                stream >> binc;
+                if (pos.is_flipped())
+                    increment = binc;
+            }
+            else if (word == "movestogo")
+            {
+                stream >> moves_to_go;
+            }
+        }
+
+        if (controller.time_dependent)
+        {
+            controller.end_time +=
+                (time_to_go + (moves_to_go - 1) * increment) / moves_to_go;
         }
 
         std::thread search_thread([&pos]() {
