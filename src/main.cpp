@@ -26,6 +26,7 @@ int main()
     std::ios_base::sync_with_stdio(false);
     std::cout.setf(std::ios::unitbuf);
     lookups::init();
+    eval::init();
 
     std::string word;
     while (true) {

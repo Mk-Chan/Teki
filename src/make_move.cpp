@@ -21,7 +21,7 @@
 
 std::string get_move_string(Move move, bool flipped)
 {
-    u32 from = from_sq(move),
+    i32 from = from_sq(move),
         to = to_sq(move);
 
     if (flipped) {
@@ -35,7 +35,7 @@ std::string get_move_string(Move move, bool flipped)
     move_string.push_back('a' + file_of(to));
     move_string.push_back('1' + rank_of(to));
 
-    u32 prom = prom_type(move);
+    i32 prom = prom_type(move);
     switch (prom) {
     case QUEEN:
         move_string.push_back('q');
@@ -57,7 +57,7 @@ std::string get_move_string(Move move, bool flipped)
 
 bool Position::make_move(Move move)
 {
-    u32 from = from_sq(move),
+    i32 from = from_sq(move),
         to = to_sq(move);
 
     this->prev_hash_keys.push_back(this->hash_key);
@@ -91,7 +91,7 @@ bool Position::make_move(Move move)
             this->remove_piece(to - 8, PAWN, THEM);
             break;
         case CASTLING:
-            u32 rfrom, rto;
+            i32 rfrom, rto;
             switch (to) {
             case C1:
                 rto = D1;

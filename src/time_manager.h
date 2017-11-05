@@ -23,8 +23,11 @@
 
 struct TimeManager
 {
+    bool time_dependent;
     time_ms start_time;
     time_ms end_time;
-} time_manager;
+};
+
+extern TimeManager time_manager;
 
 #endif

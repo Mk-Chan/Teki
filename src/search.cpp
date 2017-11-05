@@ -38,13 +38,71 @@ struct SearchStack
     std::vector<Move> pv;
 };
 
+inline bool stopped()
+{
+    return time_manager.time_dependent && utils::curr_time() >= time_manager.end_time;
+}
+
+int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
+{
+    if (pos.get_half_moves() > 99 || pos.is_repetition())
+        return 0;
+
+    if (ss->ply >= MAX_PLY)
+        return pos.evaluate();
+
+    // Mate distance pruning
+    alpha = std::max((-MATE + ss->ply), alpha);
+    beta  = std::min((MATE - ss->ply), beta);
+    if (alpha >= beta)
+        return alpha;
+
+    bool in_check = pos.in_check(US);
+    if (!in_check)
+    {
+        int eval = pos.evaluate();
+        if (eval >= beta)
+            return beta;
+        if (eval > alpha)
+            alpha = eval;
+    }
+
+    std::vector<Move>& mlist = ss->mlist;
+    mlist.clear();
+    pos.generate_quiesce_movelist(mlist);
+
+    int legal_moves = 0;
+    for (Move move : mlist) {
+        Position child_pos = pos;
+        if (!child_pos.make_move(move))
+            continue;
+
+        ++legal_moves;
+
+        int value = -qsearch(child_pos, ss + 1, -beta, -alpha);
+
+        if (stopped())
+            return 0;
+
+        if (value > alpha)
+        {
+            alpha = value;
+            if (value >= beta)
+                return beta;
+        }
+    }
+
+    if (!legal_moves && in_check)
+        return -MATE + ss->ply;
+
+    return alpha;
+}
+
 int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
 {
+    ss->pv.clear();
     if (depth <= 0)
-    {
-        ss->pv.clear();
-        return pos.evaluate();
-    }
+        return qsearch(pos, ss, alpha, beta);
 
     if (ss->ply)
     {
@@ -80,7 +138,7 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
 
         int value = -search(child_pos, ss + 1, -beta, -alpha, depth - 1);
 
-        if (utils::curr_time() >= time_manager.end_time)
+        if (stopped())
             return 0;
 
         if (value > best_value)
@@ -111,15 +169,14 @@ Move Position::best_move()
 {
     SearchStack search_stack[MAX_PLY];
     SearchStack* ss = search_stack;
-    for (u32 ply = 0; ply < MAX_PLY; ++ply)
+    for (i32 ply = 0; ply < MAX_PLY; ++ply)
         search_stack[ply].ply = ply;
 
     Move best_move;
-    time_manager.start_time = utils::curr_time();
     for (int depth = 1; depth < MAX_PLY; ++depth) {
         int score = search(*this, ss, -INFINITY, +INFINITY, depth);
 
-        if (depth > 1 && utils::curr_time() >= time_manager.end_time)
+        if (depth > 1 && stopped())
             break;
 
         time_ms time_passed = utils::curr_time() - time_manager.start_time;

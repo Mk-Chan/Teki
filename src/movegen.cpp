@@ -20,12 +20,12 @@
 #include "move.h"
 #include "lookups.h"
 
-static inline void add_move(u32 move, std::vector<u32>& mlist)
+static inline void add_move(i32 move, std::vector<Move>& mlist)
 {
     mlist.push_back(move);
 }
 
-static inline void extract_quiets(u32 from, u64 bb, std::vector<u32>& mlist)
+static inline void extract_quiets(i32 from, u64 bb, std::vector<Move>& mlist)
 {
     while (bb) {
         add_move(get_move(from, fbitscan(bb), NORMAL), mlist);
@@ -33,10 +33,10 @@ static inline void extract_quiets(u32 from, u64 bb, std::vector<u32>& mlist)
     }
 }
 
-static inline void extract_captures(const Position& pos, u32 from, u64 bb, std::vector<u32>& mlist)
+static inline void extract_captures(const Position& pos, i32 from, u64 bb, std::vector<u32>& mlist)
 {
     while (bb) {
-        u32 to = fbitscan(bb);
+        i32 to = fbitscan(bb);
         add_move(get_move(from, to, CAPTURE, pos.piece_on(to)), mlist);
         bb &= bb - 1;
     }
@@ -44,10 +44,10 @@ static inline void extract_captures(const Position& pos, u32 from, u64 bb, std::
 
 void gen_piece_captures(const Position& pos, std::vector<Move>& mlist)
 {
-    u32 from;
+    i32 from;
     u64 occupancy = pos.occupancy_bb(),
         them = pos.color_bb(THEM);
-    for (u32 pt = KING; pt >= KNIGHT; --pt) {
+    for (i32 pt = KING; pt >= KNIGHT; --pt) {
         u64 curr_pieces = pos.piece_bb(pt, US);
         while (curr_pieces) {
             from = fbitscan(curr_pieces);
@@ -58,8 +58,8 @@ void gen_piece_captures(const Position& pos, std::vector<Move>& mlist)
 }
 
 void gen_pawn_captures(const Position& pos, std::vector<Move>& mlist) {
-    u32 from;
-    u32 cap_pt;
+    i32 from;
+    i32 cap_pt;
     u64 caps1, caps2, prom_caps1, prom_caps2;
 
     u64 pawns = pos.piece_bb(PAWN, US);
@@ -115,7 +115,7 @@ void gen_quiet_promotions(const Position& pos, std::vector<Move>& mlist)
 {
     u64 prom_destinations = ((pos.piece_bb(PAWN, US) & RANK_7_MASK) << 8) & ~pos.occupancy_bb();
     while (prom_destinations) {
-        u32 to = fbitscan(prom_destinations);
+        i32 to = fbitscan(prom_destinations);
         prom_destinations &= prom_destinations - 1;
         add_move(get_move(to - 8, to, PROMOTION, CAP_NONE, PROM_TO_QUEEN), mlist);
         add_move(get_move(to - 8, to, PROMOTION, CAP_NONE, PROM_TO_KNIGHT), mlist);
@@ -126,17 +126,17 @@ void gen_quiet_promotions(const Position& pos, std::vector<Move>& mlist)
 
 void gen_castling(const Position& pos, std::vector<Move>& mlist)
 {
-    static u32 const castling_side[2] = { WHITE_OO, WHITE_OOO };
-    static u32 const king_end_pos[2] = { G1, C1 };
-    static u32 const rook_end_pos[2] = { F1, D1 };
+    static i32 const castling_side[2] = { WHITE_OO, WHITE_OOO };
+    static i32 const king_end_pos[2] = { G1, C1 };
+    static i32 const rook_end_pos[2] = { F1, D1 };
 
     if (!pos.in_check(US)) {
-        u32 ksq = pos.position_of(KING, US);
-        for (u32 i = KINGSIDE; i <= QUEENSIDE; ++i) {
+        i32 ksq = pos.position_of(KING, US);
+        for (i32 i = KINGSIDE; i <= QUEENSIDE; ++i) {
             if (castling_side[i] & pos.get_castling_rights()) {
-                u32 king_end_sq = king_end_pos[i],
+                i32 king_end_sq = king_end_pos[i],
                     rook_end_sq = rook_end_pos[i];
-                u32 rsq = castling::rook_sqs[i];
+                i32 rsq = castling::rook_sqs[i];
                 u64 occupancy = pos.occupancy_bb() ^ BB(ksq) ^ BB(rsq);
 
                 assert(pos.check_piece_on(rsq, ROOK));
@@ -149,9 +149,9 @@ void gen_castling(const Position& pos, std::vector<Move>& mlist)
                 if (intermediate_sqs & occupancy)
                     continue;
 
-                u32 can_castle = 1;
+                i32 can_castle = 1;
                 while (intermediate_sqs) {
-                    u32 sq = fbitscan(intermediate_sqs);
+                    i32 sq = fbitscan(intermediate_sqs);
                     intermediate_sqs &= intermediate_sqs - 1;
                     if (pos.attackers_to(sq, THEM)) {
                         can_castle = 0;
@@ -170,10 +170,10 @@ void gen_piece_quiets(const Position& pos, std::vector<Move>& mlist)
 {
     u64 occupancy = pos.occupancy_bb();
     u64 vacancy = ~occupancy;
-    for (u32 pt = KNIGHT; pt <= KING; ++pt) {
+    for (i32 pt = KNIGHT; pt <= KING; ++pt) {
         u64 curr_pieces = pos.piece_bb(pt, US);
         while (curr_pieces) {
-            u32 from = fbitscan(curr_pieces);
+            i32 from = fbitscan(curr_pieces);
             curr_pieces &= curr_pieces - 1;
             extract_quiets(from, lookups::attacks(pt, from, occupancy) & vacancy, mlist);
         }
@@ -186,12 +186,12 @@ void gen_pawn_quiets(const Position& pos, std::vector<Move>& mlist)
     u64 single_pushes_bb = ((pos.piece_bb(PAWN, US) & ~RANK_7_MASK) << 8) & vacancy;
     u64 double_pushes_bb = ((single_pushes_bb & RANK_3_MASK) << 8) & vacancy;
     while (single_pushes_bb) {
-        u32 to = fbitscan(single_pushes_bb);
+        i32 to = fbitscan(single_pushes_bb);
         single_pushes_bb &= single_pushes_bb - 1;
         add_move(get_move(to - 8, to, NORMAL), mlist);
     }
     while (double_pushes_bb) {
-        u32 to = fbitscan(double_pushes_bb);
+        i32 to = fbitscan(double_pushes_bb);
         double_pushes_bb &= double_pushes_bb - 1;
         add_move(get_move(to - 16, to, DOUBLE_PUSH), mlist);
     }

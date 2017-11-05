@@ -27,6 +27,8 @@
 
 #define INITIAL_POSITION ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
+TimeManager time_manager;
+
 Move get_parsed_move(Position& pos, std::string& move_str)
 {
     std::vector<Move> mlist;
@@ -42,7 +44,7 @@ Move get_parsed_move(Position& pos, std::string& move_str)
 std::string get_pv_string(std::vector<Move>& pv, bool flipped)
 {
     std::string pv_string = "";
-    for (int i = 0; i < pv.size(); ++i) {
+    for (int i = 0; i < pv.size(); ++i, flipped = !flipped) {
         pv_string += get_move_string(pv[i], flipped);
         if (i != pv.size() - 1)
             pv_string += " ";
@@ -76,12 +78,12 @@ namespace handler
 
     void perft(Position& pos, std::stringstream& stream)
     {
-        u32 depth;
+        i32 depth;
         if (!(stream >> depth))
             depth = 1;
 
         u64 count = u64(1);
-        for (u32 d = 1; d <= depth; ++d) {
+        for (i32 d = 1; d <= depth; ++d) {
             time_ms t1 = utils::curr_time();
             count = pos.perft(d);
             time_ms t2 = utils::curr_time();
@@ -117,6 +119,23 @@ namespace handler
 
     void go(Position& pos, std::stringstream& stream)
     {
+        std::string word;
+        time_manager.time_dependent = false;
+        time_manager.start_time = utils::curr_time();
+        time_manager.end_time = time_manager.start_time;
+        while (stream >> word) {
+            if (word == "infinite")
+            {
+                time_manager.time_dependent = false;
+            }
+            else if (word == "movetime")
+            {
+                time_manager.time_dependent = true;
+                time_ms movetime;
+                stream >> movetime;
+                time_manager.end_time += movetime;
+            }
+        }
         Move move = pos.best_move();
         std::cout << "bestmove " << get_move_string(move, pos.is_flipped())
                   << std::endl;
@@ -153,7 +172,7 @@ namespace uci
         loop();
     }
 
-    void print_currmove(Move move, u32 move_num, time_ms start_time, bool flipped)
+    void print_currmove(Move move, i32 move_num, time_ms start_time, bool flipped)
     {
         time_ms curr_time = utils::curr_time();
         time_ms time_passed = curr_time - start_time;

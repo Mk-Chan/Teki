@@ -30,10 +30,17 @@ typedef std::uint8_t u8;
 typedef std::uint32_t Move;
 typedef std::int32_t i32;
 
-constexpr u32 MAX_PLY = 128;
+constexpr int MAX_PLY = 128;
+constexpr int MAX_PHASE = 256;
 constexpr int INFINITY = 30000;
 constexpr int MATE = 29000;
 constexpr int MAX_MATE_VALUE = MATE - MAX_PLY;
+
+enum GamePhase
+{
+    MIDGAME,
+    ENDGAME
+};
 
 enum Color
 {
@@ -85,16 +92,22 @@ enum CastlingRights
     BLACK_OO = 4, BLACK_OOO = 8
 };
 
-inline u32 get_sq(u32 file, u32 rank) { return (rank << 3) ^ file; }
-inline u32 rank_of(u32 sq) { return sq >> 3; }
-inline u32 file_of(u32 sq) { return sq & 7; }
+inline i32 get_sq(i32 file, i32 rank) { return (rank << 3) ^ file; }
+inline i32 rank_of(i32 sq) { return sq >> 3; }
+inline i32 file_of(i32 sq) { return sq & 7; }
 
-inline u32 popcnt(u64 bb) { return __builtin_popcountll(bb); }
-inline u32 fbitscan(u64 bb) { return __builtin_ctzll(bb); }
-inline u32 rbitscan(u64 bb) { return 63 - __builtin_clzll(bb); }
+inline i32 popcnt(u64 bb) { return __builtin_popcountll(bb); }
+inline i32 fbitscan(u64 bb) { return __builtin_ctzll(bb); }
+inline i32 rbitscan(u64 bb) { return 63 - __builtin_clzll(bb); }
 
-inline u64 BB(u32 shift) { return u64(1) << shift; }
-inline u64 sBB(u32 shift) { return shift < 64 ? u64(1) << shift : 0; }
+inline u64 BB(i32 shift) { return u64(1) << shift; }
+inline u64 sBB(i32 shift) { return shift < 64 ? u64(1) << shift : 0; }
+
 extern void print_bb(u64 bb);
+
+namespace eval
+{
+    extern void init();
+}
 
 #endif

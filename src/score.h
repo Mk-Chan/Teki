@@ -21,35 +21,109 @@
 
 #include "definitions.h"
 
-class Score
+struct Score
 {
-public:
-    // Constructors
-    Score(i32 mg, i32 eg)
-    {
-        this->mg = mg;
-        this->eg = eg;
-    }
+    Score() : mg(0), eg(0) {}
+    Score(int val) : mg(val), eg(val) {}
+    Score(int mg, int eg) : mg(mg), eg(eg) {}
 
-    // Operator overloads
-    Score& operator+=(const Score& rhs)
-    {
-        this->mg += rhs.get_mg();
-        this->eg += rhs.get_eg();
-        return *this;
-    }
+    int value(int phase, int max_phase) const;
 
-    // Set values
-    void set_mg(i32 mg) { this->mg = mg; }
-    void set_eg(i32 eg) { this->eg = eg; }
+    const Score operator-() const;
 
-    // Get values
-    i32 get_mg() const { return mg; }
-    i32 get_eg() const { return eg; }
+    const Score operator+(const Score& rhs) const;
+    const Score operator-(const Score& rhs) const;
+    const Score operator*(const Score& rhs) const;
+    const Score operator/(const Score& rhs) const;
+
+    const Score operator+(const i32 rhs) const;
+    const Score operator-(const i32 rhs) const;
+    const Score operator*(const i32 rhs) const;
+    const Score operator/(const i32 rhs) const;
+
+    const Score& operator+=(const Score& rhs);
+    const Score& operator-=(const Score& rhs);
+    const Score& operator*=(const Score& rhs);
+    const Score& operator/=(const Score& rhs);
+
+    const Score& operator+=(const i32 rhs);
+    const Score& operator-=(const i32 rhs);
+    const Score& operator*=(const i32 rhs);
+    const Score& operator/=(const i32 rhs);
 
 private:
     i32 mg;
     i32 eg;
 };
+
+int Score::value(int phase, int max_phase) const
+{
+    return ((mg * phase) + (eg * (max_phase - phase))) / max_phase;
+}
+
+inline const Score Score::operator-() const { return Score(-mg, -eg); }
+
+inline const Score Score::operator+(const Score& rhs) const { return Score(mg + rhs.mg, eg + rhs.eg); }
+inline const Score Score::operator-(const Score& rhs) const { return Score(mg - rhs.mg, eg - rhs.eg); }
+inline const Score Score::operator*(const Score& rhs) const { return Score(mg * rhs.mg, eg * rhs.eg); }
+inline const Score Score::operator/(const Score& rhs) const { return Score(mg / rhs.mg, eg / rhs.eg); }
+
+inline const Score Score::operator+(const i32 rhs) const { return Score(mg + rhs, eg + rhs); }
+inline const Score Score::operator-(const i32 rhs) const { return Score(mg - rhs, eg - rhs); }
+inline const Score Score::operator*(const i32 rhs) const { return Score(mg * rhs, eg * rhs); }
+inline const Score Score::operator/(const i32 rhs) const { return Score(mg / rhs, eg / rhs); }
+
+inline const Score& Score::operator+=(const Score& rhs)
+{
+    mg += rhs.mg;
+    eg += rhs.eg;
+    return *this;
+}
+inline const Score& Score::operator-=(const Score& rhs)
+{
+    mg -= rhs.mg;
+    eg -= rhs.eg;
+    return *this;
+}
+inline const Score& Score::operator*=(const Score& rhs)
+{
+    mg *= rhs.mg;
+    eg *= rhs.eg;
+    return *this;
+}
+inline const Score& Score::operator/=(const Score& rhs)
+{
+    mg /= rhs.mg;
+    eg /= rhs.eg;
+    return *this;
+}
+
+inline const Score& Score::operator+=(const i32 rhs)
+{
+    mg += rhs;
+    eg += rhs;
+    return *this;
+}
+inline const Score& Score::operator-=(const i32 rhs)
+{
+    mg -= rhs;
+    eg -= rhs;
+    return *this;
+}
+inline const Score& Score::operator*=(const i32 rhs)
+{
+    mg *= rhs;
+    eg *= rhs;
+    return *this;
+}
+inline const Score& Score::operator/=(const i32 rhs)
+{
+    mg /= rhs;
+    eg /= rhs;
+    return *this;
+}
+
+inline Score S(int val) { return Score(val); }
+inline Score S(int mg, int eg) { return Score(mg, eg); }
 
 #endif

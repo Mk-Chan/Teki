@@ -23,11 +23,11 @@
 namespace castling
 {
     bool is_frc = false;
-    u32 rook_sqs[2];
+    i32 rook_sqs[2];
     u8 spoilers[64];
 }
 
-char piece_char(u32 pt, u32 c)
+char piece_char(i32 pt, i32 c)
 {
     char pchar;
     switch (pt) {
@@ -63,10 +63,10 @@ void Position::flip()
     this->flipped = !this->flipped;
 }
 
-u32 Position::piece_on(u32 sq) const
+i32 Position::piece_on(i32 sq) const
 {
     u64 sq_bb = BB(sq);
-    for (u32 pt = PAWN; pt < NUM_PIECE_TYPES; ++pt)
+    for (i32 pt = PAWN; pt < NUM_PIECE_TYPES; ++pt)
         if (this->bb[pt] & sq_bb)
             return pt;
     return NO_PIECE;
@@ -74,17 +74,17 @@ u32 Position::piece_on(u32 sq) const
 
 void Position::display()
 {
-    for (u32 sq = A1; sq < NUM_SQUARES; ++sq) {
+    for (i32 sq = A1; sq < NUM_SQUARES; ++sq) {
         if (sq && !(sq & 7))
             std::cout << '\n';
-        u32 piece = this->piece_on(sq ^ 56);
+        i32 piece = this->piece_on(sq ^ 56);
         if (piece == NO_PIECE)
         {
             std::cout << "- ";
         }
         else
         {
-            u32 color = ((this->color_bb(US) & BB(sq ^ 56)) && !this->is_flipped())
+            i32 color = ((this->color_bb(US) & BB(sq ^ 56)) && !this->is_flipped())
                      || ((this->color_bb(THEM) & BB(sq ^ 56)) && this->is_flipped())
                       ? WHITE
                       : BLACK;
@@ -98,9 +98,9 @@ void Position::display()
 
 void Position::clear()
 {
-    for (u32 i = 0; i < 6; ++i)
+    for (i32 i = 0; i < 6; ++i)
         this->bb[i] = 0;
-    for (u32 i = 0; i < 2; ++i)
+    for (i32 i = 0; i < 2; ++i)
         this->color[i] = 0;
     this->flipped = false;
     this->ep_sq = INVALID_SQ;
@@ -114,7 +114,7 @@ void Position::clear()
 void Position::init(std::stringstream& stream)
 {
     this->clear();
-    for (u32 i = 0 ; i < 64; ++i)
+    for (i32 i = 0 ; i < 64; ++i)
         castling::spoilers[i] = 15;
 
     if (!castling::is_frc)
@@ -133,8 +133,8 @@ void Position::init(std::stringstream& stream)
 
     // Piece list
     stream >> part;
-    u32 index = 0;
-    for (u32 i = 0; i < 64;) {
+    i32 index = 0;
+    for (i32 i = 0; i < 64;) {
         char c = part[index];
         ++index;
         if (c > '0' && c < '9')
@@ -147,8 +147,8 @@ void Position::init(std::stringstream& stream)
         }
         else
         {
-            u32 sq = i ^ 56;
-            u32 pt, pc;
+            i32 sq = i ^ 56;
+            i32 pt, pc;
             switch (c) {
             case 'p': pt = PAWN, pc = BLACK; break;
             case 'r': pt = ROOK, pc = BLACK; break;
@@ -175,7 +175,7 @@ void Position::init(std::stringstream& stream)
 
     // Castling
     stream >> part;
-    for (u32 i = 0; i < part.length(); ++i) {
+    for (i32 i = 0; i < part.length(); ++i) {
         char c = part[i];
         if (c == '-')
         {
@@ -211,7 +211,7 @@ void Position::init(std::stringstream& stream)
     stream >> this->half_moves;
 
     // Fullmove number
-    u32 full_moves; // dummy
+    i32 full_moves; // dummy
     stream >> full_moves;
 
     if (need_to_flip)
@@ -220,7 +220,7 @@ void Position::init(std::stringstream& stream)
     this->hash_key = this->calc_hash();
 }
 
-u64 Position::attackers_to(u32 sq) const
+u64 Position::attackers_to(i32 sq) const
 {
     u64 occupancy = this->occupancy_bb();
     return (lookups::rook(sq, occupancy) & (piece_bb(ROOK) | piece_bb(QUEEN)))
@@ -231,12 +231,12 @@ u64 Position::attackers_to(u32 sq) const
          | (lookups::king(sq) & piece_bb(KING));
 }
 
-u64 Position::attackers_to(u32 sq, u32 by_side) const
+u64 Position::attackers_to(i32 sq, i32 by_side) const
 {
     return this->attackers_to(sq) & this->color_bb(by_side);
 }
 
-u64 Position::in_check(u32 side) const
+u64 Position::in_check(i32 side) const
 {
         return attackers_to(this->position_of(KING, side), !side);
 }
@@ -248,8 +248,8 @@ u64 Position::calc_hash()
         this->flip();
 
     u64 hash_key = u64(0);
-    for (u32 c = WHITE; c <= BLACK; ++c) {
-        for (u32 pt = PAWN; pt <= KING; ++pt) {
+    for (i32 c = WHITE; c <= BLACK; ++c) {
+        for (i32 pt = PAWN; pt <= KING; ++pt) {
             u64 bb = this->piece_bb(pt, c);
             while (bb) {
                 hash_key ^= lookups::psq_key(c, pt, fbitscan(bb));
@@ -271,7 +271,7 @@ u64 Position::calc_hash()
     return hash_key;
 }
 
-u64 Position::perft(u32 depth, bool root) const
+u64 Position::perft(i32 depth, bool root) const
 {
     if (depth == 0)
         return u64(1);

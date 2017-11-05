@@ -29,7 +29,7 @@
 namespace castling
 {
     extern bool is_frc;
-    extern u32 rook_sqs[2];
+    extern i32 rook_sqs[2];
     extern u8 spoilers[64];
 }
 
@@ -48,26 +48,26 @@ public:
     std::uint8_t get_castling_rights() const;
     std::uint8_t get_half_moves() const;
     bool is_flipped() const;
-    bool is_kingside(u32 sq, u32 c) const;
-    bool is_queenside(u32 sq, u32 c) const;
-    u32 get_ep_sq() const;
+    bool is_kingside(i32 sq, i32 c) const;
+    bool is_queenside(i32 sq, i32 c) const;
+    i32 get_ep_sq() const;
     u64 occupancy_bb() const;
-    u64 piece_bb(u32 pt) const;
-    u64 color_bb(u32 c) const;
-    u64 piece_bb(u32 pt, u32 c) const;
-    u32 piece_on(u32 sq) const;
-    bool check_piece_on(u32 sq, u32 pt) const;
-    u32 position_of(u32 pt, u32 c) const;
-    u64 attackers_to(u32 sq) const;
-    u64 attackers_to(u32 sq, u32 by_side) const;
-    u64 in_check(u32 side) const;
+    u64 piece_bb(i32 pt) const;
+    u64 color_bb(i32 c) const;
+    u64 piece_bb(i32 pt, i32 c) const;
+    i32 piece_on(i32 sq) const;
+    bool check_piece_on(i32 sq, i32 pt) const;
+    i32 position_of(i32 pt, i32 c) const;
+    u64 attackers_to(i32 sq) const;
+    u64 attackers_to(i32 sq, i32 by_side) const;
+    u64 in_check(i32 side) const;
     void generate_movelist(std::vector<Move>& mlist) const;
     void generate_quiesce_movelist(std::vector<Move>& mlist) const;
 
     // Operations
     void flip();
     bool is_repetition() const;
-    u64 perft(u32 depth, bool root=true) const;
+    u64 perft(i32 depth, bool root=true) const;
     int evaluate();
     Move best_move();
     bool make_move(Move move);
@@ -77,16 +77,16 @@ private:
     void clear();
     void inc_half_moves();
     void reset_half_moves();
-    void put_piece(u32 sq, u32 pt, u32 c);
-    void remove_piece(u32 sq, u32 pt, u32 c);
-    void move_piece(u32 from, u32 to, u32 pt, u32 c);
+    void put_piece(i32 sq, i32 pt, i32 c);
+    void remove_piece(i32 sq, i32 pt, i32 c);
+    void move_piece(i32 from, i32 to, i32 pt, i32 c);
     u64 calc_hash();
 
     // Data members
     u64 bb[6];
     u64 color[2];
     bool flipped;
-    u32 ep_sq;
+    i32 ep_sq;
     std::uint8_t castling_rights;
     std::uint8_t half_moves;
     u64 hash_key;
@@ -99,20 +99,20 @@ inline u64 Position::get_hash_key() const { return this->hash_key; }
 inline std::uint8_t Position::get_castling_rights() const { return this->castling_rights; }
 inline std::uint8_t Position::get_half_moves() const { return this->half_moves; }
 inline bool Position::is_flipped() const { return this->flipped; }
-inline bool Position::is_kingside(u32 sq, u32 c) const { return sq > this->position_of(KING, c); }
-inline bool Position::is_queenside(u32 sq, u32 c) const { return sq < this->position_of(KING, c); }
-inline u32 Position::get_ep_sq() const { return this->ep_sq; }
+inline bool Position::is_kingside(i32 sq, i32 c) const { return sq > this->position_of(KING, c); }
+inline bool Position::is_queenside(i32 sq, i32 c) const { return sq < this->position_of(KING, c); }
+inline i32 Position::get_ep_sq() const { return this->ep_sq; }
 inline u64 Position::occupancy_bb() const { return this->color_bb(US) ^ this->color_bb(THEM); }
-inline u64 Position::piece_bb(u32 pt) const { return this->bb[pt]; }
-inline u64 Position::color_bb(u32 c) const { return this->color[c]; }
-inline u64 Position::piece_bb(u32 pt, u32 c) const { return this->bb[pt] & this->color[c]; }
-inline u32 Position::position_of(u32 pt, u32 c) const { return fbitscan(piece_bb(pt, c)); }
-inline bool Position::check_piece_on(u32 sq, u32 pt) const { return BB(sq) & this->piece_bb(pt); }
+inline u64 Position::piece_bb(i32 pt) const { return this->bb[pt]; }
+inline u64 Position::color_bb(i32 c) const { return this->color[c]; }
+inline u64 Position::piece_bb(i32 pt, i32 c) const { return this->bb[pt] & this->color[c]; }
+inline i32 Position::position_of(i32 pt, i32 c) const { return fbitscan(piece_bb(pt, c)); }
+inline bool Position::check_piece_on(i32 sq, i32 pt) const { return BB(sq) & this->piece_bb(pt); }
 
 inline void Position::inc_half_moves() { ++this->half_moves; }
 inline void Position::reset_half_moves() { this->half_moves = 0; }
 
-inline void Position::put_piece(u32 sq, u32 pt, u32 c)
+inline void Position::put_piece(i32 sq, i32 pt, i32 c)
 {
     assert(piece_on(sq) == NO_PIECE);
     u64 bb = BB(sq);
@@ -121,7 +121,7 @@ inline void Position::put_piece(u32 sq, u32 pt, u32 c)
     this->hash_key ^= lookups::psq_key(c, pt, sq);
 }
 
-inline void Position::remove_piece(u32 sq, u32 pt, u32 c)
+inline void Position::remove_piece(i32 sq, i32 pt, i32 c)
 {
     u64 bb = BB(sq);
     assert(this->bb[pt] & this->color[c] & bb);
@@ -130,7 +130,7 @@ inline void Position::remove_piece(u32 sq, u32 pt, u32 c)
     this->hash_key ^= lookups::psq_key(c, pt, sq);
 }
 
-inline void Position::move_piece(u32 from, u32 to, u32 pt, u32 c)
+inline void Position::move_piece(i32 from, i32 to, i32 pt, i32 c)
 {
     assert(from != to);
     u64 bb = BB(from) ^ BB(to);
