@@ -3,7 +3,7 @@ UCI_NAME = "\"$(ENGINE_NAME)\""
 
 CXX = clang++
 CXXFLAGS = -std=c++11 -Wall -pipe $(EXTRAFLAGS) -DNAME=$(UCI_NAME)
-LDFLAGS = -Wl,--no-as-needed $(CXXFLAGS)
+LDFLAGS = -pthread -Wl,--no-as-needed $(CXXFLAGS)
 
 OBJS = main.o uci.o lookups.o position.o movegen.o make_move.o search.o\
        evaluate.o

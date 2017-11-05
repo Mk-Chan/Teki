@@ -19,7 +19,7 @@
 #include <random>
 #include <algorithm>
 
-#include "time_manager.h"
+#include "controller.h"
 #include "position.h"
 #include "move.h"
 #include "utils.h"
@@ -40,7 +40,8 @@ struct SearchStack
 
 inline bool stopped()
 {
-    return time_manager.time_dependent && utils::curr_time() >= time_manager.end_time;
+    return controller.stop_search
+        || (controller.time_dependent && utils::curr_time() >= controller.end_time);
 }
 
 int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
@@ -134,7 +135,7 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
         ++legal_moves;
 
         if (!ss->ply)
-            uci::print_currmove(move, legal_moves, time_manager.start_time, pos.is_flipped());
+            uci::print_currmove(move, legal_moves, controller.start_time, pos.is_flipped());
 
         int value = -search(child_pos, ss + 1, -beta, -alpha, depth - 1);
 
@@ -179,7 +180,7 @@ Move Position::best_move()
         if (depth > 1 && stopped())
             break;
 
-        time_ms time_passed = utils::curr_time() - time_manager.start_time;
+        time_ms time_passed = utils::curr_time() - controller.start_time;
         uci::print_search(score, depth, 0, time_passed, ss->pv, is_flipped());
 
         best_move = ss->pv[0];

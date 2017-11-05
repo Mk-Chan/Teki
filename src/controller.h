@@ -16,18 +16,19 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TIME_MANAGER_H
-#define TIME_MANAGER_H
+#ifndef CONTROLLER_H
+#define CONTROLLER_H
 
 #include "utils.h"
 
-struct TimeManager
+struct Controller
 {
+    volatile bool stop_search;
     bool time_dependent;
     time_ms start_time;
     time_ms end_time;
 };
 
-extern TimeManager time_manager;
+extern Controller controller;
 
 #endif

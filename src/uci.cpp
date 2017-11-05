@@ -23,11 +23,11 @@
 
 #include "uci.h"
 #include "position.h"
-#include "time_manager.h"
+#include "controller.h"
 
 #define INITIAL_POSITION ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
-TimeManager time_manager;
+Controller controller;
 
 Move get_parsed_move(Position& pos, std::string& move_str)
 {
@@ -120,25 +120,35 @@ namespace handler
     void go(Position& pos, std::stringstream& stream)
     {
         std::string word;
-        time_manager.time_dependent = false;
-        time_manager.start_time = utils::curr_time();
-        time_manager.end_time = time_manager.start_time;
+        controller.stop_search = false;
+        controller.time_dependent = false;
+        controller.start_time = utils::curr_time();
+        controller.end_time = controller.start_time;
         while (stream >> word) {
             if (word == "infinite")
             {
-                time_manager.time_dependent = false;
+                controller.time_dependent = false;
             }
             else if (word == "movetime")
             {
-                time_manager.time_dependent = true;
+                controller.time_dependent = true;
                 time_ms movetime;
                 stream >> movetime;
-                time_manager.end_time += movetime;
+                controller.end_time += movetime;
             }
         }
-        Move move = pos.best_move();
-        std::cout << "bestmove " << get_move_string(move, pos.is_flipped())
-                  << std::endl;
+
+        std::thread search_thread([&pos]() {
+            Move move = pos.best_move();
+            std::cout << "bestmove " << get_move_string(move, pos.is_flipped())
+                      << std::endl;
+        });
+        search_thread.detach();
+    }
+
+    void stop()
+    {
+        controller.stop_search = true;
     }
 }
 
@@ -160,8 +170,10 @@ void loop()
         else if (word == "perft") handler::perft(pos, stream);
         else if (word == "position") handler::position(pos, stream);
         else if (word == "go") handler::go(pos, stream);
+        else if (word == "stop") handler::stop();
         else if (word == "quit") break;
     }
+    controller.stop_search = true;
 }
 
 namespace uci
