@@ -18,7 +18,7 @@
 
 #include "position.h"
 #include "utils.h"
-#include "score.h"
+#include "evaluate.h"
 
 int piece_phase[5] = { 1, 10, 10, 20, 40 };
 

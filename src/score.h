@@ -28,6 +28,7 @@ struct Score
     Score(int mg, int eg) : mg(mg), eg(eg) {}
 
     int value(int phase, int max_phase) const;
+    int value() const;
 
     const Score operator-() const;
 
@@ -56,7 +57,11 @@ private:
     i32 eg;
 };
 
-int Score::value(int phase, int max_phase) const
+inline int Score::value() const
+{
+    return mg;
+}
+inline int Score::value(int phase, int max_phase) const
 {
     return ((mg * phase) + (eg * (max_phase - phase))) / max_phase;
 }
