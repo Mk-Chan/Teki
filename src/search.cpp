@@ -87,7 +87,7 @@ void reorder_moves(const Position& pos, SearchStack* ss, Move tt_move=0)
         {
             if (move & ENPASSANT)
             {
-                order = GOOD_CAP + piece_value[PAWN].value() + 10 - PAWN;
+                order = GOOD_CAP + 10 + PAWN;
                 goto push_order;
             }
 
