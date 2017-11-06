@@ -25,6 +25,7 @@
 #include "move.h"
 #include "utils.h"
 #include "uci.h"
+#include "tt.h"
 
 constexpr int EQUAL_BOUND = 50;
 
@@ -44,9 +45,11 @@ struct SearchStack
         mlist.reserve(218);
         orderlist.reserve(218);
         pv.reserve(128);
+        killer_move[0] = killer_move[1] = 0;
     }
 
     int ply;
+    Move killer_move[2];
     std::vector<Move> mlist;
     std::vector<int> orderlist;
     std::vector<Move> pv;
@@ -58,7 +61,7 @@ inline bool stopped()
         || (controller.time_dependent && utils::curr_time() >= controller.end_time);
 }
 
-void reorder_moves(const Position& pos, SearchStack* ss)
+void reorder_moves(const Position& pos, SearchStack* ss, Move tt_move=0)
 {
     std::vector<Move>& mlist = ss->mlist;
     std::vector<int>& orderlist = ss->orderlist;
@@ -68,7 +71,19 @@ void reorder_moves(const Position& pos, SearchStack* ss)
     for (int i = 0; i < mlist.size(); ++i) {
         int order = 0;
         Move move = mlist[i];
-        if (move & CAPTURE_MASK)
+        if (move == tt_move)
+        {
+            order = HASH_MOVE;
+        }
+        else if (move == ss->killer_move[0])
+        {
+            order = KILLER;
+        }
+        else if (move == ss->killer_move[1])
+        {
+            order = KILLER - 1;
+        }
+        else if (move & CAPTURE_MASK)
         {
             if (move & ENPASSANT)
             {
@@ -200,11 +215,30 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
             return alpha;
     }
 
+    Move tt_move = 0;
+    const TTEntry& tt_entry = tt.probe(pos.get_hash_key());
+    if (tt_entry.get_key() == pos.get_hash_key())
+    {
+        tt_move = tt_entry.get_move();
+        if (tt_entry.get_depth() >= depth)
+        {
+            int tt_score = tt_entry.get_score();
+            int tt_flag = tt_entry.get_flag();
+            if (    tt_flag == FLAG_EXACT
+                || (tt_flag == FLAG_LOWER && tt_score >= beta)
+                || (tt_flag == FLAG_UPPER && tt_score <= alpha))
+            {
+                return tt_score;
+            }
+        }
+    }
+
     std::vector<Move>& mlist = ss->mlist;
     mlist.clear();
     pos.generate_movelist(mlist);
-    reorder_moves(pos, ss);
+    reorder_moves(pos, ss, tt_move);
 
+    int old_alpha = alpha;
     int best_value = -INFINITY,
         legal_moves = 0;
     Move best_move;
@@ -236,13 +270,29 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
             {
                 alpha = value;
                 if (value >= beta)
+                {
+                    if ( !((move & CAPTURE_MASK)
+                        || (move & PROMOTION)
+                        || (move == ss->killer_move[0])))
+                    {
+                        ss->killer_move[1] = ss->killer_move[0];
+                        ss->killer_move[0] = move;
+                    }
                     break;
+                }
             }
         }
     }
 
     if (!legal_moves)
         return pos.in_check(US) ? -MATE + ss->ply : 0;
+
+    u64 flag = best_value >= beta ? FLAG_LOWER
+        : best_value > old_alpha ? FLAG_EXACT
+        : FLAG_UPPER;
+
+    TTEntry entry(best_move, flag, depth, best_value, pos.get_hash_key());
+    tt.write(std::move(entry));
 
     return best_value;
 }

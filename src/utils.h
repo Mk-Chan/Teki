@@ -25,15 +25,13 @@
 #include <vector>
 #include <algorithm>
 
-using std::chrono::milliseconds;
-
-typedef long time_ms;
+typedef std::uint64_t time_ms;
 
 namespace utils
 {
     inline time_ms curr_time()
     {
-        return std::chrono::duration_cast< milliseconds >(
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()
         ).count();
     }

@@ -21,12 +21,14 @@
 #include <sstream>
 #include <thread>
 
+#include "tt.h"
 #include "uci.h"
 #include "position.h"
 #include "controller.h"
 
 #define INITIAL_POSITION ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
+TranspositionTable tt;
 Controller controller;
 
 Move get_parsed_move(Position& pos, std::string& move_str)
@@ -125,7 +127,7 @@ namespace handler
         controller.start_time = utils::curr_time();
         controller.end_time = controller.start_time;
         time_ms time_to_go = 1000;
-        int moves_to_go = 1,
+        int moves_to_go = 35,
             increment = 0;
         while (stream >> word) {
             if (word == "infinite")
