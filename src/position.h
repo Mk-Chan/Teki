@@ -110,7 +110,7 @@ inline i32 Position::position_of(i32 pt, i32 c) const { return fbitscan(piece_bb
 inline bool Position::check_piece_on(i32 sq, i32 pt) const { return BB(sq) & this->piece_bb(pt); }
 
 inline void Position::inc_half_moves() { ++this->half_moves; }
-inline void Position::reset_half_moves() { this->half_moves = 0; }
+inline void Position::reset_half_moves() { this->half_moves = 0; this->prev_hash_keys.clear(); }
 
 inline void Position::put_piece(i32 sq, i32 pt, i32 c)
 {

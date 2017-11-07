@@ -27,6 +27,8 @@
 #include "uci.h"
 #include "tt.h"
 
+constexpr int MAX_HISTORY_DEPTH = 12;
+constexpr int HISTORY_LIMIT = 8000;
 constexpr int EQUAL_BOUND = 50;
 
 enum MoveOrder
@@ -55,6 +57,20 @@ struct SearchStack
     std::vector<Move> pv;
 };
 
+int history[6][64];
+
+inline void reduce_history(bool to_zero=false)
+{
+    for (int pt = PAWN; pt <= KING; ++pt) {
+        for (int sq = 0; sq < 64; ++sq) {
+            if (to_zero)
+                history[pt][sq] = 0;
+            else
+                history[pt][sq] /= 8;
+        }
+    }
+}
+
 inline bool stopped()
 {
     return controller.stop_search
@@ -74,6 +90,10 @@ void reorder_moves(const Position& pos, SearchStack* ss, Move tt_move=0)
         if (move == tt_move)
         {
             order = HASH_MOVE;
+        }
+        else if (move & PROMOTION)
+        {
+            order = PROM + prom_type(move);
         }
         else if (move == ss->killer_move[0])
         {
@@ -105,13 +125,9 @@ void reorder_moves(const Position& pos, SearchStack* ss, Move tt_move=0)
             else
                 order = BAD_CAP - capper_pt;
         }
-        else if (move & PROMOTION)
-        {
-            order = PROM + prom_type(move);
-        }
         else
         {
-            order = psqt[pos.piece_on(from_sq(move))][to_sq(move)].value();
+            order = history[pos.piece_on(from_sq(move))][to_sq(move)];
         }
 
 push_order:
@@ -163,7 +179,10 @@ int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
 
     std::vector<Move>& mlist = ss->mlist;
     mlist.clear();
-    pos.generate_quiesce_movelist(mlist);
+    if (in_check)
+        pos.generate_movelist(mlist);
+    else
+        pos.generate_quiesce_movelist(mlist);
     reorder_moves(pos, ss);
 
     int legal_moves = 0;
@@ -194,6 +213,7 @@ int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
     return alpha;
 }
 
+template <bool pv_node>
 int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
 {
     ss->pv.clear();
@@ -220,7 +240,7 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
     if (tt_entry.get_key() == pos.get_hash_key())
     {
         tt_move = tt_entry.get_move();
-        if (tt_entry.get_depth() >= depth)
+        if (!pv_node && tt_entry.get_depth() >= depth)
         {
             int tt_score = tt_entry.get_score();
             int tt_flag = tt_entry.get_flag();
@@ -252,7 +272,19 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
         if (!ss->ply)
             uci::print_currmove(move, legal_moves, controller.start_time, pos.is_flipped());
 
-        int value = -search(child_pos, ss + 1, -beta, -alpha, depth - 1);
+        int depth_left = depth - 1;
+
+        int value;
+        if (legal_moves == 1)
+        {
+            value = -search<pv_node>(child_pos, ss + 1, -beta , -alpha, depth_left);
+        }
+        else
+        {
+            value = -search<false>(child_pos, ss + 1, -alpha - 1, -alpha, depth_left);
+            if (value > alpha)
+                value = -search<pv_node>(child_pos, ss + 1, -beta , -alpha, depth_left);
+        }
 
         if (stopped())
             return 0;
@@ -269,11 +301,20 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
             if (value > alpha)
             {
                 alpha = value;
+
+                int quiet_move = !((move & CAPTURE_MASK) || (move & PROMOTION));
+                if (quiet_move && depth <= MAX_HISTORY_DEPTH)
+                {
+                    int pt = pos.piece_on(from_sq(move));
+                    int to = to_sq(move);
+                    history[pt][to] += depth * depth;
+                    if (history[pt][to] > HISTORY_LIMIT)
+                        reduce_history();
+                }
+
                 if (value >= beta)
                 {
-                    if ( !((move & CAPTURE_MASK)
-                        || (move & PROMOTION)
-                        || (move == ss->killer_move[0])))
+                    if (quiet_move && move != ss->killer_move[0])
                     {
                         ss->killer_move[1] = ss->killer_move[0];
                         ss->killer_move[0] = move;
@@ -301,12 +342,15 @@ Move Position::best_move()
 {
     SearchStack search_stack[MAX_PLY];
     SearchStack* ss = search_stack;
-    for (i32 ply = 0; ply < MAX_PLY; ++ply)
+
+    for (int ply = 0; ply < MAX_PLY; ++ply)
         search_stack[ply].ply = ply;
+
+    reduce_history(true);
 
     Move best_move;
     for (int depth = 1; depth < MAX_PLY; ++depth) {
-        int score = search(*this, ss, -INFINITY, +INFINITY, depth);
+        int score = search<true>(*this, ss, -INFINITY, +INFINITY, depth);
 
         if (depth > 1 && stopped())
             break;
