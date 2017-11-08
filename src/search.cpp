@@ -312,16 +312,16 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
             best_value = value;
             best_move = move;
 
-            if (pv_node)
-            {
-                ss->pv.clear();
-                ss->pv.push_back(move);
-                ss->pv.insert(ss->pv.end(), ss[1].pv.begin(), ss[1].pv.end());
-            }
-
             if (value > alpha)
             {
                 alpha = value;
+
+                if (pv_node)
+                {
+                    ss->pv.clear();
+                    ss->pv.push_back(move);
+                    ss->pv.insert(ss->pv.end(), ss[1].pv.begin(), ss[1].pv.end());
+                }
 
                 int quiet_move = !((move & CAPTURE_MASK) || (move & PROMOTION));
                 if (quiet_move && depth <= MAX_HISTORY_DEPTH)
