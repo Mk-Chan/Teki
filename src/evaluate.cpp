@@ -92,6 +92,9 @@ Score psq_tmp[6][32] = {
 	}
 };
 
+Score doubled_pawns = S(-10, -10);
+Score isolated_pawn = S(-10, -10);
+
 namespace eval
 {
     void init()
@@ -141,12 +144,29 @@ Score eval_psqt_values(const Position& pos)
     return value;
 }
 
+Score eval_pawn_structure(const Position& pos)
+{
+    Score value;
+    u64 pawn_bb = pos.piece_bb(PAWN, US);
+    u64 bb = pawn_bb;
+    while (bb) {
+        int sq = fbitscan(bb);
+        bb &= bb - 1;
+        if (lookups::north(sq) & pawn_bb)
+            value += doubled_pawns;
+        if (!(lookups::adjacent_files(sq) & pawn_bb))
+            value += isolated_pawn;
+    }
+    return value;
+}
+
 int Position::evaluate()
 {
     Score eval = 0;
     for (i32 side = US; side <= THEM; ++side) {
         eval += eval_piece_values(*this);
         eval += eval_psqt_values(*this);
+        eval += eval_pawn_structure(*this);
 
         this->flip();
         eval = -eval;

@@ -71,6 +71,24 @@ inline void reduce_history(bool to_zero=false)
     }
 }
 
+inline int value_to_tt(int value, int ply)
+{
+    if (value >= MAX_MATE_VALUE)
+        value += ply;
+    else if (value <= -MAX_MATE_VALUE)
+        value -= ply;
+    return value;
+}
+
+inline int value_from_tt(int value, int ply)
+{
+    if (value >= MAX_MATE_VALUE)
+        value -= ply;
+    else if (value <= -MAX_MATE_VALUE)
+        value += ply;
+    return value;
+}
+
 inline bool stopped()
 {
     return controller.stop_search
@@ -242,7 +260,7 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
         tt_move = tt_entry.get_move();
         if (!pv_node && tt_entry.get_depth() >= depth)
         {
-            int tt_score = tt_entry.get_score();
+            int tt_score = value_from_tt(tt_entry.get_score(), ss->ply);
             int tt_flag = tt_entry.get_flag();
             if (    tt_flag == FLAG_EXACT
                 || (tt_flag == FLAG_LOWER && tt_score >= beta)
@@ -294,9 +312,12 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
             best_value = value;
             best_move = move;
 
-            ss->pv.clear();
-            ss->pv.push_back(move);
-            ss->pv.insert(ss->pv.end(), ss[1].pv.begin(), ss[1].pv.end());
+            if (pv_node)
+            {
+                ss->pv.clear();
+                ss->pv.push_back(move);
+                ss->pv.insert(ss->pv.end(), ss[1].pv.begin(), ss[1].pv.end());
+            }
 
             if (value > alpha)
             {
@@ -332,7 +353,8 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
         : best_value > old_alpha ? FLAG_EXACT
         : FLAG_UPPER;
 
-    TTEntry entry(best_move, flag, depth, best_value, pos.get_hash_key());
+    TTEntry entry(best_move, flag, depth, value_to_tt(best_value, ss->ply),
+                  pos.get_hash_key());
     tt.write(std::move(entry));
 
     return best_value;
