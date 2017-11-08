@@ -32,6 +32,7 @@ u64 xray_bb[64][64];
 u64 full_ray_bb[64][64];
 u64 intervening_ray_bb[64][64];
 u64 adjacent_files_bb[64];
+u64 adjacent_forward_bb[64];
 
 u64 pawn_attacks[2][64];
 u64 knight_attacks[64];
@@ -114,11 +115,17 @@ void init_misc()
 {
 	int i, j, high, low;
 	for (i = 0; i < 64; i++) {
-        adjacent_files_bb[i] = 0;
+        adjacent_files_bb[i] = adjacent_forward_bb[i] = 0;
         if (file_of(i) != FILE_A)
+        {
+            adjacent_forward_bb[i] |= north_bb[i-1] | north_bb[i];
             adjacent_files_bb[i] |= BB(i-1) | north_bb[i-1] | south_bb[i-1];
+        }
         if (file_of(i) != FILE_H)
+        {
+            adjacent_forward_bb[i] |= north_bb[i+1] | north_bb[i];
             adjacent_files_bb[i] |= BB(i+1) | north_bb[i+1] | south_bb[i+1];
+        }
 		for (j = 0; j < 64; j++) {
 			distance_val[i][j] = std::max(abs(i32(rank_of(i)) - i32(rank_of(j))),
                                       abs(i32(file_of(i)) - i32(file_of(j))));
@@ -277,6 +284,7 @@ namespace lookups
     u64 full_ray(i32 from, i32 to) { return full_ray_bb[from][to]; }
     u64 intervening_sqs(i32 from, i32 to) { return intervening_ray_bb[from][to]; }
     u64 adjacent_files(i32 sq) { return adjacent_files_bb[sq]; }
+    u64 adjacent_forward(i32 square) { return adjacent_forward_bb[square]; }
 
     u64 north(i32 square) { return north_bb[square]; }
     u64 south(i32 square) { return south_bb[square]; }

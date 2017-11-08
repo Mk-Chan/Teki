@@ -92,8 +92,13 @@ Score psq_tmp[6][32] = {
 	}
 };
 
+Score passed_pawn[7] = {
+    0, S(5, 5), S(10, 10), S(15, 20), S(30, 40), S(50, 70), S(80, 120)
+};
 Score doubled_pawns = S(-10, -10);
 Score isolated_pawn = S(-10, -10);
+Score rook_on_7th_rank = S(40, 20);
+Score bishop_pair = S(50, 80);
 
 namespace eval
 {
@@ -147,16 +152,41 @@ Score eval_psqt_values(const Position& pos)
 Score eval_pawn_structure(const Position& pos)
 {
     Score value;
+    u64 all_pawns_bb = pos.piece_bb(PAWN);
     u64 pawn_bb = pos.piece_bb(PAWN, US);
     u64 bb = pawn_bb;
     while (bb) {
         int sq = fbitscan(bb);
         bb &= bb - 1;
+
         if (lookups::north(sq) & pawn_bb)
             value += doubled_pawns;
+
         if (!(lookups::adjacent_files(sq) & pawn_bb))
             value += isolated_pawn;
+
+        if (!(lookups::adjacent_forward(sq) & all_pawns_bb))
+            value += passed_pawn[rank_of(sq)];
     }
+    return value;
+}
+
+Score eval_piece_placement(const Position& pos)
+{
+    Score value;
+
+    if (popcnt(pos.piece_bb(BISHOP, US)) >= 2)
+        value += bishop_pair;
+
+    u64 bb = pos.piece_bb(ROOK, US);
+    while (bb) {
+        int sq = fbitscan(bb);
+        bb &= bb - 1;
+
+        if (rank_of(sq) == RANK_7)
+            value += rook_on_7th_rank;
+    }
+
     return value;
 }
 
@@ -167,6 +197,7 @@ int Position::evaluate()
         eval += eval_piece_values(*this);
         eval += eval_psqt_values(*this);
         eval += eval_pawn_structure(*this);
+        eval += eval_piece_placement(*this);
 
         this->flip();
         eval = -eval;

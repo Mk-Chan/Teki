@@ -54,6 +54,7 @@ namespace lookups
     extern u64 full_ray(i32 from, i32 to);
     extern u64 intervening_sqs(i32 from, i32 to);
     extern u64 adjacent_files(i32 square);
+    extern u64 adjacent_forward(i32 square);
 
     extern u64 north(i32 square);
     extern u64 south(i32 square);
