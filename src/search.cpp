@@ -34,10 +34,11 @@ constexpr int EQUAL_BOUND = 50;
 enum MoveOrder
 {
     HASH_MOVE = 300000,
-    GOOD_CAP = 290000,
-    PROM = 280000,
-    KILLER = 270000,
-    BAD_CAP = 260000,
+    HANGING_CAP = 290000,
+    GOOD_CAP = 280000,
+    PROM = 270000,
+    KILLER = 260000,
+    BAD_CAP = 250000,
 };
 
 struct SearchStack
@@ -129,19 +130,27 @@ void reorder_moves(const Position& pos, SearchStack* ss, Move tt_move=0)
                 goto push_order;
             }
 
+            bool defended = pos.attackers_to(to_sq(move), THEM) > 0;
             int cap_val = piece_value[pos.piece_on(to_sq(move))].value();
             int capper_pt = pos.piece_on(from_sq(move));
-            int cap_diff = cap_val - piece_value[capper_pt].value();
-
             if (move & PROM_CAPTURE)
                 cap_val += piece_value[prom_type(move)].value();
 
-            if (cap_diff > EQUAL_BOUND)
-                order = GOOD_CAP + cap_val - capper_pt;
-            else if (cap_diff > -EQUAL_BOUND)
-                order = GOOD_CAP + capper_pt;
+            if (defended)
+            {
+                int cap_diff = cap_val - piece_value[capper_pt].value();
+
+                if (cap_diff > EQUAL_BOUND)
+                    order = GOOD_CAP + cap_val - capper_pt;
+                else if (cap_diff > -EQUAL_BOUND)
+                    order = GOOD_CAP + capper_pt;
+                else
+                    order = BAD_CAP - capper_pt;
+            }
             else
-                order = BAD_CAP - capper_pt;
+            {
+                order = HANGING_CAP + cap_val - capper_pt;
+            }
         }
         else
         {
