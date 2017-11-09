@@ -204,6 +204,8 @@ int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
             alpha = eval;
     }
 
+    ++controller.nodes_searched;
+
     std::vector<Move>& mlist = ss->mlist;
     mlist.clear();
     if (in_check)
@@ -280,6 +282,8 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
         }
     }
 
+    ++controller.nodes_searched;
+
     std::vector<Move>& mlist = ss->mlist;
     mlist.clear();
     pos.generate_movelist(mlist);
@@ -313,7 +317,7 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
                 value = -search<pv_node>(child_pos, ss + 1, -beta , -alpha, depth_left);
         }
 
-        if (stopped())
+        if (!(controller.nodes_searched & 2047) && stopped())
             return 0;
 
         if (value > best_value)
@@ -378,6 +382,7 @@ Move Position::best_move()
         search_stack[ply].ply = ply;
 
     reduce_history(true);
+    controller.nodes_searched = 0;
 
     Move best_move;
     for (int depth = 1; depth < MAX_PLY; ++depth) {
@@ -387,7 +392,7 @@ Move Position::best_move()
             break;
 
         time_ms time_passed = utils::curr_time() - controller.start_time;
-        uci::print_search(score, depth, 0, time_passed, ss->pv, is_flipped());
+        uci::print_search(score, depth, time_passed, ss->pv, is_flipped());
 
         best_move = ss->pv[0];
     }

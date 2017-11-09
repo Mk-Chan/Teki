@@ -25,6 +25,7 @@ struct Controller
 {
     volatile bool stop_search;
     bool time_dependent;
+    std::uint64_t nodes_searched;
     time_ms start_time;
     time_ms end_time;
 };

@@ -32,7 +32,7 @@ namespace uci
 {
     extern void init();
     extern void print_currmove(Move move, i32 move_num, time_ms start_time, bool flipped);
-    extern void print_search(int score, int depth, u64 nodes, time_ms time,
+    extern void print_search(int score, int depth, time_ms time,
                              std::vector<Move>& pv, bool flipped);
 }
 

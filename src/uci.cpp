@@ -241,18 +241,19 @@ namespace uci
             std::cout << "info"
                       << " currmovenumber " << move_num
                       << " currmove " << get_move_string(move, flipped)
+                      << " nodes " << controller.nodes_searched
                       << " time " << time_passed
                       << std::endl;
         }
     }
 
-    void print_search(int score, int depth, u64 nodes, time_ms time,
-                      std::vector<Move>& pv, bool flipped)
+    void print_search(int score, int depth, time_ms time, std::vector<Move>& pv,
+                      bool flipped)
     {
         std::cout << "info"
                   << " score cp " << score
                   << " depth " << depth
-                  << " nodes " << nodes
+                  << " nodes " << controller.nodes_searched
                   << " time " << time
                   << " pv " << get_pv_string(pv, flipped)
                   << std::endl;
