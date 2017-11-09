@@ -165,7 +165,8 @@ Score eval_pawn_structure(const Position& pos)
         if (!(lookups::adjacent_files(sq) & pawn_bb))
             value += isolated_pawn;
 
-        if (!(lookups::adjacent_forward(sq) & all_pawns_bb))
+        if (   !(lookups::north(sq) & all_pawns_bb)
+            && !(lookups::adjacent_forward(sq) & all_pawns_bb))
             value += passed_pawn[rank_of(sq)];
     }
     return value;
