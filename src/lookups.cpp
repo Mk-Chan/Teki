@@ -267,7 +267,7 @@ void init_keys()
 void init_eval_masks()
 {
     for (int i = 0; i < 64; ++i) {
-        king_danger_zone_bb[i] = BB(i) | lookups::king(i) | (lookups::king(i) << 8);
+        king_danger_zone_bb[i] = BB(i) | lookups::king(i) | (lookups::king(i) >> 8);
     }
 }
 

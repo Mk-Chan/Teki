@@ -228,14 +228,13 @@ Score Evaluator::eval_pieces()
             bb &= bb - 1;
 
             u64 atks_bb = lookups::attacks(pt, sq, pos.occupancy_bb());
-            value += popcnt(atks_bb & ~their_atks_bb);
+            value += 5 * popcnt(atks_bb & ~their_atks_bb);
 
             u64 king_atks_bb = atks_bb & lookups::king_danger_zone(pos.position_of(KING, THEM));
             if (king_atks_bb)
                 king_attacks += king_attack_weight[pt] * popcnt(king_atks_bb);
         }
     }
-    value *= 5;
 
     return value;
 }
