@@ -118,7 +118,6 @@ inline void Position::put_piece(i32 sq, i32 pt, i32 c)
     u64 bb = BB(sq);
     this->bb[pt] ^= bb;
     this->color[c] ^= bb;
-    this->hash_key ^= lookups::psq_key(c, pt, sq);
 }
 
 inline void Position::remove_piece(i32 sq, i32 pt, i32 c)
@@ -127,7 +126,6 @@ inline void Position::remove_piece(i32 sq, i32 pt, i32 c)
     assert(this->bb[pt] & this->color[c] & bb);
     this->bb[pt] ^= bb;
     this->color[c] ^= bb;
-    this->hash_key ^= lookups::psq_key(c, pt, sq);
 }
 
 inline void Position::move_piece(i32 from, i32 to, i32 pt, i32 c)
@@ -136,8 +134,6 @@ inline void Position::move_piece(i32 from, i32 to, i32 pt, i32 c)
     u64 bb = BB(from) ^ BB(to);
     this->bb[pt] ^= bb;
     this->color[c] ^= bb;
-    this->hash_key ^= lookups::psq_key(c, pt, from)
-                    ^ lookups::psq_key(c, pt, to);
 }
 
 #endif
