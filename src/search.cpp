@@ -185,6 +185,9 @@ int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
     if (pos.get_half_moves() > 99 || pos.is_repetition())
         return 0;
 
+    if (!(controller.nodes_searched & 2047) && stopped())
+        return 0;
+
     if (ss->ply >= MAX_PLY)
         return pos.evaluate();
 
@@ -225,7 +228,7 @@ int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
 
         int value = -qsearch(child_pos, ss + 1, -beta, -alpha);
 
-        if (stopped())
+        if (!(controller.nodes_searched & 2047) && stopped())
             return 0;
 
         if (value > alpha)
@@ -263,6 +266,9 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
         if (alpha >= beta)
             return alpha;
     }
+
+    if (!(controller.nodes_searched & 2047) && stopped())
+        return 0;
 
     Move tt_move = 0;
     const TTEntry& tt_entry = tt.probe(pos.get_hash_key());

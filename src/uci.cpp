@@ -184,6 +184,8 @@ namespace handler
         {
             controller.end_time +=
                 (time_to_go + (moves_to_go - 1) * increment) / moves_to_go;
+            if (moves_to_go == 1)
+                controller.end_time -= 50;
         }
 
         std::thread search_thread([&pos]() {
