@@ -34,6 +34,8 @@ u64 intervening_ray_bb[64][64];
 u64 adjacent_files_bb[64];
 u64 adjacent_forward_bb[64];
 
+u64 king_danger_zone_bb[64];
+
 u64 pawn_attacks[2][64];
 u64 knight_attacks[64];
 u64 bishop_attacks[64];
@@ -262,6 +264,13 @@ void init_keys()
     stm_key_bb = utils::rand_u64(0, UINT64_MAX);
 }
 
+void init_eval_masks()
+{
+    for (int i = 0; i < 64; ++i) {
+        king_danger_zone_bb[i] = BB(i) | lookups::king(i) | (lookups::king(i) << 8);
+    }
+}
+
 namespace lookups
 {
     void init()
@@ -271,6 +280,7 @@ namespace lookups
         init_pseudo_sliders();
         init_misc();
         init_keys();
+        init_eval_masks();
     }
 
     u64 psq_key(i32 c, i32 pt, i32 sq) { return psq_keys_bb[c][pt][sq]; }
@@ -285,6 +295,8 @@ namespace lookups
     u64 intervening_sqs(i32 from, i32 to) { return intervening_ray_bb[from][to]; }
     u64 adjacent_files(i32 sq) { return adjacent_files_bb[sq]; }
     u64 adjacent_forward(i32 square) { return adjacent_forward_bb[square]; }
+
+    u64 king_danger_zone(i32 square) { return king_danger_zone_bb[square]; }
 
     u64 north(i32 square) { return north_bb[square]; }
     u64 south(i32 square) { return south_bb[square]; }

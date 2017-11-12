@@ -56,6 +56,8 @@ namespace lookups
     extern u64 adjacent_files(i32 square);
     extern u64 adjacent_forward(i32 square);
 
+    extern u64 king_danger_zone(i32 square);
+
     extern u64 north(i32 square);
     extern u64 south(i32 square);
     extern u64 east(i32 square);
