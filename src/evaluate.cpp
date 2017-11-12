@@ -194,9 +194,9 @@ Score eval_piece_placement(const Position& pos)
 Score eval_piece_mobility(const Position& pos)
 {
     Score value;
-    u64 their_pawn_atks_bb = 0;
-    their_pawn_atks_bb |= ((pos.piece_bb(PAWN, THEM) & ~FILE_A_MASK) >> 9);
-    their_pawn_atks_bb |= ((pos.piece_bb(PAWN, THEM) & ~FILE_H_MASK) >> 7);
+    u64 their_atks_bb = 0;
+    their_atks_bb |= ((pos.piece_bb(PAWN, THEM) & ~FILE_A_MASK) >> 9);
+    their_atks_bb |= ((pos.piece_bb(PAWN, THEM) & ~FILE_H_MASK) >> 7);
 
     for (int pt = KNIGHT; pt < KING; ++pt) {
         u64 bb = pos.piece_bb(pt, US);
@@ -204,10 +204,10 @@ Score eval_piece_mobility(const Position& pos)
             int sq = fbitscan(bb);
             bb &= bb - 1;
 
-            value += 5 * popcnt(lookups::attacks(pt, sq, pos.occupancy_bb())
-                                & ~their_pawn_atks_bb);
+            value += popcnt(lookups::attacks(pt, sq, pos.occupancy_bb()) & ~their_atks_bb);
         }
     }
+    value *= 5;
 
     return value;
 }
