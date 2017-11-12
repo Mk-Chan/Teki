@@ -58,6 +58,7 @@ inline TTEntry::TTEntry(std::uint64_t move, std::uint64_t flag, std::uint64_t de
                         std::uint64_t score, std::uint64_t key)
 {
     data = move | (flag << FLAG_SHIFT) | (depth << DEPTH_SHIFT) | (score << SCORE_SHIFT);
+    this->key = key;
 }
 inline std::uint64_t TTEntry::get_key() const { return key; }
 inline std::uint32_t TTEntry::get_move() const { return std::uint32_t(data & MOVE_MASK); }
@@ -107,7 +108,7 @@ inline const TTEntry TranspositionTable::probe(std::uint64_t key) const
 inline void TranspositionTable::write(const TTEntry entry)
 {
     int index = hash(entry.get_key());
-    table[index] = std::move(entry);
+    table[index] = entry;
 }
 
 extern TranspositionTable tt;

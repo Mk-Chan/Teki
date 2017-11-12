@@ -368,7 +368,7 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
 
     TTEntry entry(best_move, flag, depth, value_to_tt(best_value, ss->ply),
                   pos.get_hash_key());
-    tt.write(std::move(entry));
+    tt.write(entry);
 
     return best_value;
 }
