@@ -219,7 +219,6 @@ int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
 
     int legal_moves = 0;
     for (Move move : mlist) {
-        assert((move & CAPTURE_MASK) || (move & PROMOTION));
         Position child_pos = pos;
         if (!child_pos.make_move(move))
             continue;
