@@ -33,7 +33,7 @@ static inline void extract_quiets(i32 from, u64 bb, std::vector<Move>& mlist)
     }
 }
 
-static inline void extract_captures(const Position& pos, i32 from, u64 bb, std::vector<u32>& mlist)
+static inline void extract_captures(const Position& pos, i32 from, u64 bb, std::vector<Move>& mlist)
 {
     while (bb) {
         i32 to = fbitscan(bb);
