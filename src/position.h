@@ -60,23 +60,29 @@ public:
     i32 position_of(i32 pt, i32 c) const;
     u64 attackers_to(i32 sq) const;
     u64 attackers_to(i32 sq, i32 by_side) const;
-    u64 in_check(i32 side) const;
+    u64 attackers_to(i32 sq, u64 occupancy) const;
+    u64 attackers_to(i32 sq, i32 by_side, u64 occupancy) const;
+    u64 checkers_to(i32 side) const;
+    u64 pinned(i32 to_side) const;
+    void generate_in_check_movelist(std::vector<Move>& mlist) const;
     void generate_movelist(std::vector<Move>& mlist) const;
     void generate_quiesce_movelist(std::vector<Move>& mlist) const;
 
     // Operations
     void flip();
     bool is_repetition() const;
+    bool legal_move(Move move) const;
     u64 perft(i32 depth, bool root=true) const;
     int evaluate();
     Move best_move();
-    bool make_move(Move move);
+    void make_move(Move move);
 
 private:
     // Internal operations
     void clear();
     void inc_half_moves();
     void reset_half_moves();
+    void clear_prev_hash_keys();
     void put_piece(i32 sq, i32 pt, i32 c);
     void remove_piece(i32 sq, i32 pt, i32 c);
     void move_piece(i32 from, i32 to, i32 pt, i32 c);
@@ -110,7 +116,8 @@ inline i32 Position::position_of(i32 pt, i32 c) const { return fbitscan(piece_bb
 inline bool Position::check_piece_on(i32 sq, i32 pt) const { return BB(sq) & this->piece_bb(pt); }
 
 inline void Position::inc_half_moves() { ++this->half_moves; }
-inline void Position::reset_half_moves() { this->half_moves = 0; this->prev_hash_keys.clear(); }
+inline void Position::reset_half_moves() { this->half_moves = 0; }
+inline void Position::clear_prev_hash_keys() { this->prev_hash_keys.clear(); }
 
 inline void Position::put_piece(i32 sq, i32 pt, i32 c)
 {

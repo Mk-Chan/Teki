@@ -130,7 +130,7 @@ void gen_castling(const Position& pos, std::vector<Move>& mlist)
     static i32 const king_end_pos[2] = { G1, C1 };
     static i32 const rook_end_pos[2] = { F1, D1 };
 
-    if (!pos.in_check(US)) {
+    if (!pos.checkers_to(US)) {
         i32 ksq = pos.position_of(KING, US);
         for (i32 i = KINGSIDE; i <= QUEENSIDE; ++i) {
             if (castling_side[i] & pos.get_castling_rights()) {
@@ -149,12 +149,12 @@ void gen_castling(const Position& pos, std::vector<Move>& mlist)
                 if (intermediate_sqs & occupancy)
                     continue;
 
-                i32 can_castle = 1;
+                bool can_castle = true;
                 while (intermediate_sqs) {
                     i32 sq = fbitscan(intermediate_sqs);
                     intermediate_sqs &= intermediate_sqs - 1;
                     if (pos.attackers_to(sq, THEM)) {
-                        can_castle = 0;
+                        can_castle = false;
                         break;
                     }
                 }
@@ -195,6 +195,132 @@ void gen_pawn_quiets(const Position& pos, std::vector<Move>& mlist)
         double_pushes_bb &= double_pushes_bb - 1;
         add_move(get_move(to - 16, to, DOUBLE_PUSH), mlist);
     }
+}
+
+void gen_checker_captures(const Position& pos, u64 checkers, std::vector<Move>& mlist)
+{
+    u64 our_pawns = pos.piece_bb(PAWN, US);
+    u64 non_king_mask = ~pos.piece_bb(KING);
+    u64 occupancy = pos.occupancy_bb();
+    i32 ep_sq = pos.get_ep_sq();
+
+    if (ep_sq != INVALID_SQ && ((BB(ep_sq) >> 8) & checkers))
+    {
+        u64 enpassanters = our_pawns & lookups::pawn(ep_sq, THEM);
+        while (enpassanters) {
+            int attacker_sq = fbitscan(enpassanters);
+            enpassanters &= enpassanters - 1;
+            add_move(get_move(attacker_sq, ep_sq, ENPASSANT), mlist);
+        }
+    }
+
+    while (checkers) {
+        int checker_sq = fbitscan(checkers);
+        int checker_pt = pos.piece_on(checker_sq);
+        checkers &= checkers - 1;
+        u64 attackers = pos.attackers_to(checker_sq, US, occupancy) & non_king_mask;
+        while (attackers) {
+            int attacker_sq = fbitscan(attackers);
+            attackers &= attackers - 1;
+            if (   (BB(attacker_sq) & our_pawns)
+                && (BB(checker_sq) & RANK_8_MASK))
+            {
+                add_move(get_move(attacker_sq, checker_sq, PROM_CAPTURE,
+                                  checker_pt, PROM_TO_QUEEN), mlist);
+                add_move(get_move(attacker_sq, checker_sq, PROM_CAPTURE,
+                                  checker_pt, PROM_TO_KNIGHT), mlist);
+                add_move(get_move(attacker_sq, checker_sq, PROM_CAPTURE,
+                                  checker_pt, PROM_TO_ROOK), mlist);
+                add_move(get_move(attacker_sq, checker_sq, PROM_CAPTURE,
+                                  checker_pt, PROM_TO_BISHOP), mlist);
+            }
+            else
+            {
+                add_move(get_move(attacker_sq, checker_sq, CAPTURE, checker_pt), mlist);
+            }
+        }
+    }
+}
+
+void gen_check_blocks(const Position& pos, u64 blocking_possibilites, std::vector<Move>& mlist)
+{
+    u64 our_pawns = pos.piece_bb(PAWN, US);
+    u64 inclusion_mask = ~(our_pawns | pos.piece_bb(KING) | pos.pinned(US));
+    u64 occupancy = pos.occupancy_bb();
+    u64 vacancy_mask = ~occupancy;
+
+    while (blocking_possibilites) {
+        int blocking_sq = fbitscan(blocking_possibilites);
+        blocking_possibilites &= blocking_possibilites - 1;
+        u64 pawn_blockers = BB(blocking_sq) >> 8;
+        if (pawn_blockers & our_pawns)
+        {
+            int blocker_sq = fbitscan(pawn_blockers);
+            if (BB(blocking_sq) & RANK_8_MASK)
+            {
+                add_move(get_move(blocker_sq, blocking_sq, PROMOTION,
+                                  CAP_NONE, PROM_TO_QUEEN), mlist);
+                add_move(get_move(blocker_sq, blocking_sq, PROMOTION,
+                                  CAP_NONE, PROM_TO_KNIGHT), mlist);
+                add_move(get_move(blocker_sq, blocking_sq, PROMOTION,
+                                  CAP_NONE, PROM_TO_ROOK), mlist);
+                add_move(get_move(blocker_sq, blocking_sq, PROMOTION,
+                                  CAP_NONE, PROM_TO_BISHOP), mlist);
+            }
+            else
+            {
+                add_move(get_move(blocker_sq, blocking_sq, NORMAL), mlist);
+            }
+        }
+        else if(   (rank_of(blocking_sq) == RANK_4)
+                && (pawn_blockers & vacancy_mask)
+                && (pawn_blockers = (pawn_blockers >> 8) & our_pawns))
+        {
+            add_move(get_move(fbitscan(pawn_blockers), blocking_sq,
+                              DOUBLE_PUSH), mlist);
+        }
+
+        u64 candidate_blockers = pos.attackers_to(blocking_sq, US, occupancy)
+                               & inclusion_mask;
+        while (candidate_blockers) {
+            add_move(get_move(fbitscan(candidate_blockers), blocking_sq,
+                              NORMAL), mlist);
+            candidate_blockers &= candidate_blockers - 1;
+        }
+    }
+}
+
+void Position::generate_in_check_movelist(std::vector<Move>& mlist) const
+{
+    i32 ksq = this->position_of(KING, US);
+    u64 checkers = this->checkers_to(US);
+    u64 evasions = lookups::king(ksq) & ~this->color_bb(US);
+
+    u64 occupancy = this->occupancy_bb();
+    u64 sans_king = occupancy ^ BB(ksq);
+
+    while (evasions) {
+        int sq = fbitscan(evasions);
+        evasions &= evasions - 1;
+        if (!this->attackers_to(sq, THEM, sans_king)) {
+            if (occupancy & BB(sq))
+                add_move(get_move(ksq, sq, CAPTURE, this->piece_on(sq)), mlist);
+            else
+                add_move(get_move(ksq, sq, NORMAL), mlist);
+        }
+    }
+
+    if (checkers & (checkers - 1))
+        return;
+
+    gen_checker_captures(*this, checkers, mlist);
+
+    if (checkers & lookups::king(ksq))
+        return;
+
+    u64 blocking_possibilites = lookups::intervening_sqs(fbitscan(checkers), ksq);
+    if (blocking_possibilites)
+        gen_check_blocks(*this, blocking_possibilites, mlist);
 }
 
 void Position::generate_quiesce_movelist(std::vector<Move>& mlist) const

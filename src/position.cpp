@@ -208,7 +208,9 @@ void Position::init(std::stringstream& stream)
     }
 
     // Halfmove number
-    stream >> this->half_moves;
+    i32 half_moves;
+    stream >> half_moves;
+    this->half_moves = half_moves;
 
     // Fullmove number
     i32 full_moves; // dummy
@@ -222,7 +224,16 @@ void Position::init(std::stringstream& stream)
 
 u64 Position::attackers_to(i32 sq) const
 {
-    u64 occupancy = this->occupancy_bb();
+    return this->attackers_to(sq, this->occupancy_bb());
+}
+
+u64 Position::attackers_to(i32 sq, i32 by_side) const
+{
+    return this->attackers_to(sq) & this->color_bb(by_side);
+}
+
+u64 Position::attackers_to(i32 sq, u64 occupancy) const
+{
     return (lookups::rook(sq, occupancy) & (piece_bb(ROOK) | piece_bb(QUEEN)))
          | (lookups::bishop(sq, occupancy) & (piece_bb(BISHOP) | piece_bb(QUEEN)))
          | (lookups::knight(sq) & piece_bb(KNIGHT))
@@ -231,12 +242,12 @@ u64 Position::attackers_to(i32 sq) const
          | (lookups::king(sq) & piece_bb(KING));
 }
 
-u64 Position::attackers_to(i32 sq, i32 by_side) const
+u64 Position::attackers_to(i32 sq, i32 by_side, u64 occupancy) const
 {
-    return this->attackers_to(sq) & this->color_bb(by_side);
+    return this->attackers_to(sq, occupancy) & this->color_bb(by_side);
 }
 
-u64 Position::in_check(i32 side) const
+u64 Position::checkers_to(i32 side) const
 {
         return attackers_to(this->position_of(KING, side), !side);
 }
@@ -271,23 +282,51 @@ u64 Position::calc_hash()
     return hash_key;
 }
 
+u64 Position::pinned(i32 side) const
+{
+    i32 ksq = this->position_of(KING, side);
+    u64 qr_bb = this->piece_bb(QUEEN) | this->piece_bb(ROOK);
+    u64 qb_bb = this->piece_bb(QUEEN) | this->piece_bb(BISHOP);
+    u64 nside_bb = this->color_bb(!side);
+
+    u64 pinners = (qr_bb & nside_bb & lookups::rook(ksq))
+                | (qb_bb & nside_bb & lookups::bishop(ksq));
+    u64 occupancy_bb = this->occupancy_bb();
+
+    u64 pinned = 0;
+    while (pinners) {
+        i32 sq = fbitscan(pinners);
+        pinners &= pinners - 1;
+        u64 bb = lookups::intervening_sqs(sq, ksq) & occupancy_bb;
+        if (!(bb & (bb - 1)))
+            pinned ^= bb & this->color_bb(side);
+    }
+
+    return pinned;
+}
+
 u64 Position::perft(i32 depth, bool root) const
 {
     if (depth == 0)
         return u64(1);
 
+    bool in_check = this->checkers_to(US);
     std::vector<Move> mlist;
-    this->generate_movelist(mlist);
+    if (in_check)
+        this->generate_in_check_movelist(mlist);
+    else
+        this->generate_movelist(mlist);
 
     u64 leaves = u64(0);
     for (Move move : mlist) {
         Position pos = *this;
-        if (!pos.make_move(move))
+        if (!pos.legal_move(move))
             continue;
+        pos.make_move(move);
         u64 count = pos.perft(depth - 1, false);
         leaves += count;
         if (root)
-            std::cout << get_move_string(move, this->is_flipped()) << ": "
+            std::cout << get_move_string(move, !pos.is_flipped()) << ": "
                       << count << std::endl;
     }
 
@@ -296,6 +335,7 @@ u64 Position::perft(i32 depth, bool root) const
 
 bool Position::is_repetition() const
 {
+    assert(this->prev_hash_keys.size() == this->get_half_moves());
     u64 curr_hash = this->get_hash_key();
     int num_keys = this->prev_hash_keys.size();
     for (int i = num_keys - 2; i >= num_keys - this->get_half_moves(); i -= 2)

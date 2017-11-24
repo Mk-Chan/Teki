@@ -55,12 +55,38 @@ std::string get_move_string(Move move, bool flipped)
     return move_string;
 }
 
-bool Position::make_move(Move move)
+bool Position::legal_move(Move move) const
+{
+    i32 from = from_sq(move);
+    i32 ksq = this->position_of(KING, US);
+    if (move & ENPASSANT)
+    {
+        u64 to_bb = BB(this->ep_sq);
+        u64 cap_bb = to_bb >> 8;
+        u64 pieces = (this->occupancy_bb() ^ BB(from) ^ cap_bb) | to_bb;
+
+        u64 qr_bb = this->piece_bb(QUEEN) | this->piece_bb(ROOK);
+        u64 qb_bb = this->piece_bb(QUEEN) | this->piece_bb(BISHOP);
+        u64 them_bb = this->color_bb(THEM);
+
+        return !(lookups::rook(ksq, pieces) & (qr_bb & them_bb))
+            && !(lookups::bishop(ksq, pieces) & (qb_bb & them_bb));
+    }
+    else if (from == ksq)
+    {
+        return (move & CASTLING) || !(this->attackers_to(to_sq(move), THEM));
+    }
+    else
+    {
+        return !(this->pinned(US) & BB(from))
+             || (BB(to_sq(move)) & lookups::full_ray(from, ksq));
+    }
+}
+
+void Position::make_move(Move move)
 {
     i32 from = from_sq(move),
         to = to_sq(move);
-
-    this->prev_hash_keys.push_back(this->hash_key);
 
     if (this->ep_sq != INVALID_SQ)
         this->ep_sq = INVALID_SQ;
@@ -69,9 +95,15 @@ bool Position::make_move(Move move)
                            & castling::spoilers[to];
 
     if (this->check_piece_on(from, PAWN))
+    {
         this->reset_half_moves();
+        this->clear_prev_hash_keys();
+    }
     else
+    {
+        this->prev_hash_keys.push_back(this->hash_key);
         this->inc_half_moves();
+    }
 
     switch (move & MOVE_TYPE_MASK) {
         case NORMAL:
@@ -81,6 +113,7 @@ bool Position::make_move(Move move)
             this->remove_piece(to, this->piece_on(to), THEM);
             this->move_piece(from, to, this->piece_on(from), US);
             this->reset_half_moves();
+            this->clear_prev_hash_keys();
             break;
         case DOUBLE_PUSH:
             this->move_piece(from, to, PAWN, US);
@@ -124,12 +157,6 @@ bool Position::make_move(Move move)
             break;
     }
 
-    if (this->in_check(US))
-        return false;
-
     this->flip();
-
     this->hash_key = this->calc_hash();
-
-    return true;
 }

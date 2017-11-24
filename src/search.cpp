@@ -197,7 +197,7 @@ int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
     if (alpha >= beta)
         return alpha;
 
-    bool in_check = pos.in_check(US);
+    bool in_check = pos.checkers_to(US);
     if (!in_check)
     {
         int eval = pos.evaluate();
@@ -212,16 +212,17 @@ int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
     std::vector<Move>& mlist = ss->mlist;
     mlist.clear();
     if (in_check)
-        pos.generate_movelist(mlist);
+        pos.generate_in_check_movelist(mlist);
     else
         pos.generate_quiesce_movelist(mlist);
     reorder_moves(pos, ss);
 
     int legal_moves = 0;
     for (Move move : mlist) {
-        Position child_pos = pos;
-        if (!child_pos.make_move(move))
+        if (!pos.legal_move(move))
             continue;
+        Position child_pos = pos;
+        child_pos.make_move(move);
 
         ++legal_moves;
 
@@ -291,7 +292,12 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
 
     std::vector<Move>& mlist = ss->mlist;
     mlist.clear();
-    pos.generate_movelist(mlist);
+
+    bool in_check = pos.checkers_to(US);
+    if (in_check)
+        pos.generate_in_check_movelist(mlist);
+    else
+        pos.generate_movelist(mlist);
     reorder_moves(pos, ss, tt_move);
 
     int old_alpha = alpha;
@@ -299,9 +305,10 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
         legal_moves = 0;
     Move best_move;
     for (Move move : mlist) {
-        Position child_pos = pos;
-        if (!child_pos.make_move(move))
+        if (!pos.legal_move(move))
             continue;
+        Position child_pos = pos;
+        child_pos.make_move(move);
 
         ++legal_moves;
 
@@ -365,7 +372,7 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
     }
 
     if (!legal_moves)
-        return pos.in_check(US) ? -MATE + ss->ply : 0;
+        return pos.checkers_to(US) ? -MATE + ss->ply : 0;
 
     u64 flag = best_value >= beta ? FLAG_LOWER
         : best_value > old_alpha ? FLAG_EXACT
