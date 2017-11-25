@@ -69,6 +69,7 @@ inline int TTEntry::get_score() const { return int(data >> SCORE_SHIFT); }
 struct TranspositionTable
 {
     TranspositionTable();
+    ~TranspositionTable();
     TranspositionTable(int MB);
     void resize(int MB);
     const TTEntry probe(std::uint64_t key) const;
@@ -76,13 +77,18 @@ struct TranspositionTable
     const int hash(std::uint64_t key) const;
 
 private:
-    std::unique_ptr<TTEntry[]> table;
+    TTEntry* table;
     int size;
 };
 
 inline TranspositionTable::TranspositionTable()
 {
-    resize(1);
+    size = (1 << 20) / sizeof(TTEntry);
+    table = new TTEntry[size];
+}
+inline TranspositionTable::~TranspositionTable()
+{
+    delete[] table;
 }
 inline TranspositionTable::TranspositionTable(int MB)
 {
@@ -94,7 +100,8 @@ inline void TranspositionTable::resize(int MB)
         MB = 1;
 
     size = ((1 << 20) * MB) / sizeof(TTEntry);
-    table = std::unique_ptr<TTEntry[]>(new TTEntry[size]);
+    delete[] table;
+    table = new TTEntry[size];
 }
 inline const int TranspositionTable::hash(std::uint64_t key) const
 {
