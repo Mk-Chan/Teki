@@ -189,8 +189,7 @@ Score Evaluator::eval_pawns()
             value += isolated_pawn;
 
         // Passed pawn
-        if (   !(lookups::north(sq) & all_pawns_bb)
-            && !(lookups::adjacent_forward(sq) & all_pawns_bb))
+        if (!(lookups::passed_pawn_mask(sq) & all_pawns_bb))
             value += passed_pawn[rank_of(sq)];
     }
     return value;
@@ -224,7 +223,6 @@ Score Evaluator::eval_pieces()
 
             // Piece square value
             value += psqt[pt][sq];
-
 
             // Mobility
             u64 atks_bb = lookups::attacks(pt, sq, pos.occupancy_bb());
