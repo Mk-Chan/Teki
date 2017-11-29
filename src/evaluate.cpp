@@ -139,11 +139,9 @@ struct Evaluator
     int evaluate();
     void reset();
     int get_game_phase();
-    Score eval_piece_values();
-    Score eval_psqt_values();
-    Score eval_pawn_structure();
+    Score eval_pawns();
     Score eval_pieces();
-    Score eval_king_attacks();
+    Score eval_king();
 
 private:
     int king_attacks;
@@ -165,43 +163,32 @@ int Evaluator::get_game_phase()
     return phase;
 }
 
-Score Evaluator::eval_piece_values()
-{
-    Score value;
-    for (int pt = PAWN; pt < KING; ++pt)
-        value += piece_value[pt] * popcnt(pos.piece_bb(pt, US));
-    return value;
-}
-
-Score Evaluator::eval_psqt_values()
-{
-    Score value;
-    for (int pt = PAWN; pt <= KING; ++pt) {
-        u64 bb = pos.piece_bb(pt, US);
-        while (bb) {
-            value += psqt[pt][fbitscan(bb)];
-            bb &= bb - 1;
-        }
-    }
-    return value;
-}
-
-Score Evaluator::eval_pawn_structure()
+Score Evaluator::eval_pawns()
 {
     Score value;
     u64 all_pawns_bb = pos.piece_bb(PAWN);
     u64 pawn_bb = pos.piece_bb(PAWN, US);
+
+    // Material value
+    value += piece_value[PAWN] * popcnt(pawn_bb);
+
     u64 bb = pawn_bb;
     while (bb) {
         int sq = fbitscan(bb);
         bb &= bb - 1;
 
+        // Piece square value
+        value += psqt[PAWN][sq];
+
+        // Doubled pawn
         if (lookups::north(sq) & pawn_bb)
             value += doubled_pawns;
 
+        // Isolated Pawn
         if (!(lookups::adjacent_files(sq) & pawn_bb))
             value += isolated_pawn;
 
+        // Passed pawn
         if (   !(lookups::north(sq) & all_pawns_bb)
             && !(lookups::adjacent_forward(sq) & all_pawns_bb))
             value += passed_pawn[rank_of(sq)];
@@ -212,24 +199,38 @@ Score Evaluator::eval_pawn_structure()
 Score Evaluator::eval_pieces()
 {
     Score value;
+
+    // Squares covered by their pawns' attacks
     u64 their_atks_bb = 0;
     their_atks_bb |= ((pos.piece_bb(PAWN, THEM) & ~FILE_A_MASK) >> 9);
     their_atks_bb |= ((pos.piece_bb(PAWN, THEM) & ~FILE_H_MASK) >> 7);
 
+    // Bishop pair
     if (popcnt(pos.piece_bb(BISHOP, US)) >= 2)
         value += bishop_pair;
 
+    // Rook on relative 7th rank
     value += rook_on_7th_rank * popcnt(pos.piece_bb(ROOK, US) & RANK_7_MASK);
 
     for (int pt = KNIGHT; pt < KING; ++pt) {
         u64 bb = pos.piece_bb(pt, US);
+
+        // Material value
+        value += piece_value[pt] * popcnt(bb);
+
         while (bb) {
             int sq = fbitscan(bb);
             bb &= bb - 1;
 
+            // Piece square value
+            value += psqt[pt][sq];
+
+
+            // Mobility
             u64 atks_bb = lookups::attacks(pt, sq, pos.occupancy_bb());
             value += 5 * popcnt(atks_bb & ~their_atks_bb);
 
+            // Attacks to their king
             u64 king_atks_bb = atks_bb & lookups::king_danger_zone(pos.position_of(KING, THEM));
             if (king_atks_bb)
                 king_attacks += king_attack_weight[pt] * popcnt(king_atks_bb);
@@ -239,11 +240,16 @@ Score Evaluator::eval_pieces()
     return value;
 }
 
-Score Evaluator::eval_king_attacks()
+Score Evaluator::eval_king()
 {
     Score value;
-    int mg_value = king_attack_table[std::min(king_attacks, 99)];
-    value += S(mg_value, mg_value/2);
+
+    // Piece square value
+    value += psqt[KING][pos.position_of(KING, US)];
+
+    // Lookup king attack index
+    int val = king_attack_table[std::min(king_attacks, 99)];
+    value += S(val, val/2);
     return value;
 }
 
@@ -253,11 +259,9 @@ int Evaluator::evaluate()
     for (i32 side = US; side <= THEM; ++side) {
         reset();
 
-        score += eval_piece_values();
-        score += eval_psqt_values();
-        score += eval_pawn_structure();
+        score += eval_pawns();
         score += eval_pieces();
-        score += eval_king_attacks();
+        score += eval_king();
 
         pos.flip();
         score = -score;
