@@ -115,8 +115,8 @@ void init_pseudo_sliders()
 
 void init_misc()
 {
-	int i, j, high, low;
-	for (i = 0; i < 64; i++) {
+    int i, j, high, low;
+    for (i = 0; i < 64; i++) {
         adjacent_files_bb[i] = adjacent_forward_bb[i] = 0;
         if (file_of(i) != FILE_A)
         {
@@ -128,73 +128,73 @@ void init_misc()
             adjacent_forward_bb[i] |= north_bb[i+1] | north_bb[i];
             adjacent_files_bb[i] |= BB(i+1) | north_bb[i+1] | south_bb[i+1];
         }
-		for (j = 0; j < 64; j++) {
-			distance_val[i][j] = std::max(abs(i32(rank_of(i)) - i32(rank_of(j))),
+        for (j = 0; j < 64; j++) {
+            distance_val[i][j] = std::max(abs(i32(rank_of(i)) - i32(rank_of(j))),
                                       abs(i32(file_of(i)) - i32(file_of(j))));
-			intervening_ray_bb[i][j] = 0;
-			if (i == j)
-				continue;
-			high = j;
-			if (i > j) {
-				high = i;
-				low = j;
-			}
-			else
-				low = i;
-			if (file_of(high) == file_of(low))
+            intervening_ray_bb[i][j] = 0;
+            if (i == j)
+                continue;
+            high = j;
+            if (i > j) {
+                high = i;
+                low = j;
+            }
+            else
+                low = i;
+            if (file_of(high) == file_of(low))
             {
                 full_ray_bb[i][j] =
                     (lookups::rook(high) & lookups::rook(low)) | BB(i) | BB(j);
                 xray_bb[low][high] = lookups::north(low);
                 xray_bb[high][low] = lookups::south(high);
                 ray_bb[i][j] = BB(high);
-				for (high -= 8; high >= low; high -= 8) {
+                for (high -= 8; high >= low; high -= 8) {
                     ray_bb[i][j] |= BB(high);
                     if (high != low)
                         intervening_ray_bb[i][j] |= BB(high);
                 }
-			}
-			else if (rank_of(high) == rank_of(low))
+            }
+            else if (rank_of(high) == rank_of(low))
             {
                 full_ray_bb[i][j] =
                     (lookups::rook(high) & lookups::rook(low)) | BB(i) | BB(j);
                 xray_bb[low][high] = lookups::east(low);
                 xray_bb[high][low] = lookups::west(high);
                 ray_bb[i][j] = BB(high);
-				for (--high; high >= low; high--) {
+                for (--high; high >= low; high--) {
                     ray_bb[i][j] |= BB(high);
                     if (high != low)
                         intervening_ray_bb[i][j] |= BB(high);
                 }
-			}
-			else if (rank_of(high) - rank_of(low) == file_of(high) - file_of(low))
+            }
+            else if (rank_of(high) - rank_of(low) == file_of(high) - file_of(low))
             {
                 full_ray_bb[i][j] =
                     (lookups::bishop(high) & lookups::bishop(low)) | BB(i) | BB(j);
                 xray_bb[low][high] = lookups::northeast(low);
                 xray_bb[high][low] = lookups::southwest(high);
                 ray_bb[i][j] = BB(high);
-				for (high -= 9; high >= low; high -= 9) {
+                for (high -= 9; high >= low; high -= 9) {
                     ray_bb[i][j] |= BB(high);
                     if (high != low)
                         intervening_ray_bb[i][j] |= BB(high);
                 }
-			}
-			else if (rank_of(high) - rank_of(low) == file_of(low) - file_of(high))
+            }
+            else if (rank_of(high) - rank_of(low) == file_of(low) - file_of(high))
             {
                 full_ray_bb[i][j] =
                     (lookups::bishop(high) & lookups::bishop(low)) | BB(i) | BB(j);
                 xray_bb[low][high] = lookups::northwest(low);
                 xray_bb[high][low] = lookups::southeast(high);
                 ray_bb[i][j] = BB(high);
-				for (high -= 7; high >= low; high -= 7) {
+                for (high -= 7; high >= low; high -= 7) {
                     ray_bb[i][j] |= BB(high);
                     if (high != low)
                         intervening_ray_bb[i][j] |= BB(high);
                 }
-			}
-		}
-	}
+            }
+        }
+    }
 }
 
 void init_directions()
