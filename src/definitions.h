@@ -77,7 +77,7 @@ enum Rank
 enum PieceType
 {
     PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
-    NUM_PIECE_TYPES, NO_PIECE
+    NUM_PIECE_TYPES, ALL_PIECES = NUM_PIECE_TYPES, NO_PIECE
 };
 
 enum CastlingType
