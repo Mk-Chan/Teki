@@ -267,9 +267,11 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
             return alpha;
     }
 
+    // Check if time is left
     if (!(controller.nodes_searched & 2047) && stopped())
         return 0;
 
+    // Transposition table probe
     Move tt_move = 0;
     const TTEntry& tt_entry = tt.probe(pos.get_hash_key());
     if (tt_entry.get_key() == pos.get_hash_key())
@@ -290,14 +292,18 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
 
     ++controller.nodes_searched;
 
+    // Get a pre-allocated movelist
     std::vector<Move>& mlist = ss->mlist;
     mlist.clear();
 
+    // Populate the movelist
     bool in_check = pos.checkers_to(US);
     if (in_check)
         pos.generate_in_check_movelist(mlist);
     else
         pos.generate_movelist(mlist);
+
+    // Reorder the moves
     reorder_moves(pos, ss, tt_move);
 
     int old_alpha = alpha;
@@ -305,6 +311,7 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
         legal_moves = 0;
     Move best_move;
     for (Move move : mlist) {
+        // Check for legality and make move
         if (!pos.legal_move(move))
             continue;
         Position child_pos = pos;
@@ -312,11 +319,13 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
 
         ++legal_moves;
 
+        // Print move being searched at root
         if (!ss->ply)
             uci::print_currmove(move, legal_moves, controller.start_time, pos.is_flipped());
 
         int depth_left = depth - 1;
 
+        // Principal Variation Search (PVS)
         int value;
         if (legal_moves == 1)
         {
@@ -329,6 +338,7 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
                 value = -search<pv_node>(child_pos, ss + 1, -beta , -alpha, depth_left);
         }
 
+        // Check if time is left
         if (!(controller.nodes_searched & 2047) && stopped())
             return 0;
 
@@ -341,6 +351,7 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
             {
                 alpha = value;
 
+                // Update PV
                 if (pv_node)
                 {
                     ss->pv.clear();
@@ -348,18 +359,22 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
                     ss->pv.insert(ss->pv.end(), ss[1].pv.begin(), ss[1].pv.end());
                 }
 
+                // Update history
                 int quiet_move = !((move & CAPTURE_MASK) || (move & PROMOTION));
                 if (quiet_move && depth <= MAX_HISTORY_DEPTH)
                 {
                     int pt = pos.piece_on(from_sq(move));
                     int to = to_sq(move);
                     history[pt][to] += depth * depth;
+
+                    // Reduce history if it overflows
                     if (history[pt][to] > HISTORY_LIMIT)
                         reduce_history();
                 }
 
                 if (value >= beta)
                 {
+                    // Update killer moves
                     if (quiet_move && move != ss->killer_move[0])
                     {
                         ss->killer_move[1] = ss->killer_move[0];
@@ -371,13 +386,16 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
         }
     }
 
+    // Check for checkmate or stalemate
     if (!legal_moves)
         return pos.checkers_to(US) ? -MATE + ss->ply : 0;
 
+    // Transposition entry flag
     u64 flag = best_value >= beta ? FLAG_LOWER
         : best_value > old_alpha ? FLAG_EXACT
         : FLAG_UPPER;
 
+    // Create a tt entry and store it
     TTEntry entry(best_move, flag, depth, value_to_tt(best_value, ss->ply),
                   pos.get_hash_key());
     tt.write(entry);
