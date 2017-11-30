@@ -23,6 +23,7 @@
 enum PassedPawnType
 {
     UNSAFE_ADVANCE,
+    PROTECTED_ADVANCE,
     SAFE_ADVANCE
 };
 
@@ -98,8 +99,9 @@ Score psq_tmp[6][32] = {
     }
 };
 
-Score passed_pawn[2][7] = {
+Score passed_pawn[3][7] = {
     { 0, S(5, 5), S(10, 10), S(15, 20), S(30, 40), S(80, 120), S(120, 250) },
+    { 0, S(7, 7), S(12, 12), S(17, 22), S(35, 45), S(90, 160), S(130, 300) },
     { 0, S(7, 7), S(15, 15), S(20, 25), S(40, 50), S(100, 200), S(150, 400) }
 };
 Score doubled_pawns = S(-10, -10);
@@ -286,11 +288,21 @@ Score Evaluator::eval_passed_pawns()
         int sq = fbitscan(passed_pawn_bb);
         passed_pawn_bb &= passed_pawn_bb - 1;
 
+        int rank = rank_of(sq);
+        u64 forward = BB(sq + 8);
+
         // Passed pawn value
-        if (attacked_by[!this->side][ALL_PIECES] & BB(sq + 8))
-            value += passed_pawn[UNSAFE_ADVANCE][rank_of(sq)];
+        if (attacked_by[!this->side][ALL_PIECES] & forward)
+        {
+            if (attacked_by[this->side][ALL_PIECES] & forward)
+                value += passed_pawn[PROTECTED_ADVANCE][rank];
+            else
+                value += passed_pawn[UNSAFE_ADVANCE][rank];
+        }
         else
-            value += passed_pawn[SAFE_ADVANCE][rank_of(sq)];
+        {
+            value += passed_pawn[SAFE_ADVANCE][rank];
+        }
     }
     return value;
 }
