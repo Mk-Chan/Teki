@@ -306,6 +306,10 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
     // Reorder the moves
     reorder_moves(pos, ss, tt_move);
 
+    // In-check extension
+    if (in_check)
+        ++depth;
+
     int old_alpha = alpha;
     int best_value = -INFINITY,
         legal_moves = 0;
