@@ -22,6 +22,7 @@
 
 enum PassedPawnType
 {
+    CANNOT_ADVANCE,
     UNSAFE_ADVANCE,
     PROTECTED_ADVANCE,
     SAFE_ADVANCE
@@ -99,7 +100,8 @@ Score psq_tmp[6][32] = {
     }
 };
 
-Score passed_pawn[3][7] = {
+Score passed_pawn[4][7] = {
+    { 0, S(4, 4), S(8, 8), S(12, 18), S(27, 35), S(75, 110), S(100, 220) },
     { 0, S(5, 5), S(10, 10), S(15, 20), S(30, 40), S(80, 120), S(120, 250) },
     { 0, S(7, 7), S(12, 12), S(17, 22), S(35, 45), S(90, 160), S(130, 300) },
     { 0, S(7, 7), S(15, 15), S(20, 25), S(40, 50), S(100, 200), S(150, 400) }
@@ -283,6 +285,7 @@ Score Evaluator::eval_king()
 Score Evaluator::eval_passed_pawns()
 {
     Score value;
+    u64 occupancy = pos.occupancy_bb();
     u64 passed_pawn_bb = this->passed_pawn_bb[this->side];
     while (passed_pawn_bb) {
         int sq = fbitscan(passed_pawn_bb);
@@ -292,16 +295,34 @@ Score Evaluator::eval_passed_pawns()
         u64 forward = BB(sq + 8);
 
         // Passed pawn value
-        if (attacked_by[!this->side][ALL_PIECES] & forward)
+        if (forward & pos.occupancy_bb())
         {
-            if (attacked_by[this->side][ALL_PIECES] & forward)
-                value += passed_pawn[PROTECTED_ADVANCE][rank];
-            else
-                value += passed_pawn[UNSAFE_ADVANCE][rank];
+            value += passed_pawn[CANNOT_ADVANCE][rank];
         }
         else
         {
-            value += passed_pawn[SAFE_ADVANCE][rank];
+            u64 path_to_queen = lookups::north(sq),
+                defended = path_to_queen,
+                attacked = path_to_queen;
+
+            u64 xrayers = (pos.piece_bb(ROOK) | pos.piece_bb(QUEEN))
+                         & lookups::south(sq)
+                         & lookups::rook(sq, occupancy);
+
+            if (!(xrayers & pos.color_bb(US)))
+                defended &= attacked_by[this->side][ALL_PIECES];
+            if (!(xrayers & pos.color_bb(THEM)))
+                attacked &= attacked_by[!this->side][ALL_PIECES];
+
+            int type;
+            if (!attacked)
+                type = SAFE_ADVANCE;
+            else if (attacked && !defended)
+                type = UNSAFE_ADVANCE;
+            else
+                type = PROTECTED_ADVANCE;
+
+            value += passed_pawn[type][rank];
         }
     }
     return value;
