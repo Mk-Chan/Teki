@@ -32,6 +32,8 @@ u64 xray_bb[64][64];
 u64 full_ray_bb[64][64];
 u64 intervening_ray_bb[64][64];
 u64 adjacent_files_bb[64];
+u64 file_mask_bb[64];
+u64 rank_mask_bb[64];
 
 u64 passed_pawn_mask_bb[64];
 u64 king_danger_zone_bb[64];
@@ -117,6 +119,8 @@ void init_misc()
 {
     int i, j, high, low;
     for (i = 0; i < 64; i++) {
+        file_mask_bb[i] = lookups::north(i) | lookups::south(i) | BB(i);
+        rank_mask_bb[i] = lookups::east(i) | lookups::west(i) | BB(i);
         passed_pawn_mask_bb[i] = passed_pawn_mask_bb[i] = 0;
         if (file_of(i) != FILE_A)
         {
@@ -294,6 +298,8 @@ namespace lookups
     u64 full_ray(i32 from, i32 to) { return full_ray_bb[from][to]; }
     u64 intervening_sqs(i32 from, i32 to) { return intervening_ray_bb[from][to]; }
     u64 adjacent_files(i32 sq) { return adjacent_files_bb[sq]; }
+    u64 file_mask(i32 sq) { return file_mask_bb[sq]; }
+    u64 rank_mask(i32 sq) { return rank_mask_bb[sq]; }
 
     u64 passed_pawn_mask(i32 square) { return passed_pawn_mask_bb[square]; }
     u64 king_danger_zone(i32 square) { return king_danger_zone_bb[square]; }
