@@ -166,7 +166,14 @@ private:
     Position& pos;
 };
 
-Evaluator::Evaluator(Position& pos) : pos(pos) {}
+Evaluator::Evaluator(Position& pos) : pos(pos)
+{
+    king_attacks[US] = king_attacks[THEM] = 0;
+    passed_pawn_bb[US] = passed_pawn_bb[THEM] = 0;
+    attacked_by[US][ALL_PIECES] = attacked_by[THEM][ALL_PIECES] = 0;
+    for (int pt = PAWN; pt <= KING; ++pt)
+        attacked_by[US][pt] = attacked_by[THEM][pt] = 0;
+}
 
 int Evaluator::get_game_phase()
 {
@@ -181,6 +188,15 @@ Score Evaluator::eval_pawns()
     Score value;
     u64 all_pawns_bb = pos.piece_bb(PAWN);
     u64 pawn_bb = pos.piece_bb(PAWN, US);
+
+    // Squares covered by our pawns' attacks
+    u64 attacked = 0;
+    attacked |= ((pawn_bb & ~FILE_A_MASK) << 7);
+    attacked |= ((pawn_bb & ~FILE_H_MASK) << 9);
+
+    // Update pawn attacks
+    this->attacked_by[this->side][PAWN] |= attacked;
+    this->attacked_by[this->side][ALL_PIECES] |= attacked;
 
     // Material value
     value += piece_value[PAWN] * popcnt(pawn_bb);
@@ -213,13 +229,10 @@ Score Evaluator::eval_pieces()
     Score value;
 
     // Squares covered by their pawns' attacks
-    u64 their_atks_bb = 0;
-    their_atks_bb |= ((pos.piece_bb(PAWN, THEM) & ~FILE_A_MASK) >> 9);
-    their_atks_bb |= ((pos.piece_bb(PAWN, THEM) & ~FILE_H_MASK) >> 7);
-
-    // Update pawn attacks
-    this->attacked_by[this->side][PAWN] |= their_atks_bb;
-    this->attacked_by[this->side][ALL_PIECES] |= their_atks_bb;
+    u64 mobility_mask = 0;
+    mobility_mask |= ((pos.piece_bb(PAWN, THEM) & ~FILE_A_MASK) >> 9);
+    mobility_mask |= ((pos.piece_bb(PAWN, THEM) & ~FILE_H_MASK) >> 7);
+    mobility_mask = ~mobility_mask;
 
     // Bishop pair
     if (popcnt(pos.piece_bb(BISHOP, US)) >= 2)
@@ -243,7 +256,7 @@ Score Evaluator::eval_pieces()
 
             // Mobility
             u64 atks_bb = lookups::attacks(pt, sq, pos.occupancy_bb());
-            value += 5 * popcnt(atks_bb & ~their_atks_bb);
+            value += 5 * popcnt(atks_bb & mobility_mask);
 
             // Update attacks
             this->attacked_by[this->side][pt] |= atks_bb;
@@ -333,11 +346,6 @@ int Evaluator::evaluate()
     Score score;
     for (i32 side = US; side <= THEM; ++side) {
         this->side = side;
-        this->king_attacks[this->side] = 0;
-        this->passed_pawn_bb[this->side] = 0;
-        this->attacked_by[this->side][ALL_PIECES] = 0;
-        for (int pt = PAWN; pt <= KING; ++pt)
-            this->attacked_by[this->side][pt] = 0;
 
         score += eval_pawns();
         score += eval_pieces();
