@@ -180,6 +180,8 @@ push_order:
 
 int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
 {
+    ++controller.nodes_searched;
+
     if (pos.get_half_moves() > 99 || pos.is_repetition())
         return 0;
 
@@ -204,8 +206,6 @@ int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
         if (eval > alpha)
             alpha = eval;
     }
-
-    ++controller.nodes_searched;
 
     std::vector<Move>& mlist = ss->mlist;
     mlist.clear();
@@ -250,6 +250,8 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
     if (depth <= 0)
         return qsearch(pos, ss, alpha, beta);
 
+    ++controller.nodes_searched;
+
     if (ss->ply)
     {
         if (pos.get_half_moves() > 99 || pos.is_repetition())
@@ -287,8 +289,6 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
             }
         }
     }
-
-    ++controller.nodes_searched;
 
     // Get a pre-allocated movelist
     std::vector<Move>& mlist = ss->mlist;
