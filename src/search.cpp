@@ -159,12 +159,8 @@ void reorder_moves(const Position& pos, SearchStack* ss, Move tt_move=0)
 
 push_order:
         orderlist.push_back(order);
-    }
 
-    assert(mlist.size() == orderlist.size());
-
-    // Sort moves
-    for (int i = 1; i < mlist.size(); ++i) {
+        // Sort moves using insertion sort
         int order_to_shift = orderlist[i];
         Move move_to_shift = mlist[i];
         int j;
@@ -175,6 +171,8 @@ push_order:
         orderlist[j+1] = order_to_shift;
         mlist[j+1] = move_to_shift;
     }
+
+    assert(mlist.size() == orderlist.size());
 
     for (int i = 1; i < orderlist.size(); ++i)
         assert(orderlist[i-1] >= orderlist[i]);

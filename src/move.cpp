@@ -88,11 +88,11 @@ void Position::make_move(Move move)
     i32 from = from_sq(move),
         to = to_sq(move);
 
-    if (this->ep_sq != INVALID_SQ)
-        this->ep_sq = INVALID_SQ;
-
     this->castling_rights &= castling::spoilers[from]
                            & castling::spoilers[to];
+
+    if (this->ep_sq != INVALID_SQ)
+        this->ep_sq = INVALID_SQ;
 
     if (this->check_piece_on(from, PAWN))
     {
