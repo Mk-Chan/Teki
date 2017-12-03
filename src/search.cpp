@@ -45,6 +45,7 @@ struct SearchStack
 {
     SearchStack()
     {
+        forward_pruning = true;
         mlist.reserve(218);
         orderlist.reserve(218);
         pv.reserve(128);
@@ -52,6 +53,7 @@ struct SearchStack
     }
 
     int ply;
+    bool forward_pruning;
     Move killer_move[2];
     std::vector<Move> mlist;
     std::vector<int> orderlist;
@@ -290,12 +292,44 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
         }
     }
 
+    int num_non_pawns = popcnt(pos.color_bb(US)
+                               & ~(pos.piece_bb(KING) ^ pos.piece_bb(PAWN)));
+    bool in_check = pos.checkers_to(US);
+
+    // Forward pruning
+    if (   !pv_node
+        && num_non_pawns
+        && !in_check
+        && ss->forward_pruning)
+    {
+        if (depth >= 4 && pos.evaluate() >= beta - 100)
+        {
+            int reduction = 4;
+            int depth_left = std::max(1, depth - reduction);
+            ss[1].forward_pruning = false;
+            Position child = pos;
+            child.make_null_move();
+            int val = -search<false>(child, ss + 1, -beta, -beta + 1, depth_left);
+            ss[1].forward_pruning = true;
+
+            // Check if time is left
+            if (!(controller.nodes_searched & 2047) && stopped())
+                return 0;
+
+            if (val >= beta)
+            {
+                if (val >= MAX_MATE_VALUE)
+                    val = beta;
+                return val;
+            }
+        }
+    }
+
     // Get a pre-allocated movelist
     std::vector<Move>& mlist = ss->mlist;
     mlist.clear();
 
     // Populate the movelist
-    bool in_check = pos.checkers_to(US);
     if (in_check)
         pos.generate_in_check_movelist(mlist);
     else
