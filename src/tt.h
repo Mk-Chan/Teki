@@ -47,6 +47,7 @@ struct TTEntry
     int get_flag() const;
     int get_depth() const;
     int get_score() const;
+    void clear();
 
 private:
     std::uint64_t key;
@@ -65,6 +66,7 @@ inline std::uint32_t TTEntry::get_move() const { return std::uint32_t(data & MOV
 inline int TTEntry::get_flag() const { return (data >> FLAG_SHIFT) & FLAG_MASK; }
 inline int TTEntry::get_depth() const { return (data >> DEPTH_SHIFT) & DEPTH_MASK; }
 inline int TTEntry::get_score() const { return int(data >> SCORE_SHIFT); }
+inline void TTEntry::clear() { key = data = 0; }
 
 struct TranspositionTable
 {
@@ -74,6 +76,7 @@ struct TranspositionTable
     void resize(int MB);
     const TTEntry probe(std::uint64_t key) const;
     void write(TTEntry entry);
+    void clear();
     const int hash(std::uint64_t key) const;
 
 private:
@@ -85,15 +88,19 @@ inline TranspositionTable::TranspositionTable()
 {
     size = (1 << 20) / sizeof(TTEntry);
     table = new TTEntry[size];
+    clear();
 }
+
 inline TranspositionTable::~TranspositionTable()
 {
     delete[] table;
 }
+
 inline TranspositionTable::TranspositionTable(int MB)
 {
     resize(MB);
 }
+
 inline void TranspositionTable::resize(int MB)
 {
     if (MB <= 0)
@@ -102,16 +109,26 @@ inline void TranspositionTable::resize(int MB)
     size = ((1 << 20) * MB) / sizeof(TTEntry);
     delete[] table;
     table = new TTEntry[size];
+    clear();
 }
+
+inline void TranspositionTable::clear()
+{
+    for (int i = 0; i < size; ++i)
+        table[i].clear();
+}
+
 inline const int TranspositionTable::hash(std::uint64_t key) const
 {
     return key % size;
 }
+
 inline const TTEntry TranspositionTable::probe(std::uint64_t key) const
 {
     int index = hash(key);
     return table[index];
 }
+
 inline void TranspositionTable::write(const TTEntry entry)
 {
     int index = hash(entry.get_key());

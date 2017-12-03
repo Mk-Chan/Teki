@@ -70,7 +70,7 @@ namespace handler
 
     void ucinewgame()
     {
-        // Reset search/eval state (hashtables, history etc)
+        tt.clear();
     }
 
     void isready()
