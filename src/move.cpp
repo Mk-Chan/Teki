@@ -83,6 +83,14 @@ bool Position::legal_move(Move move) const
     }
 }
 
+void Position::make_null_move()
+{
+    this->inc_half_moves();
+    this->ep_sq = INVALID_SQ;
+    this->flip();
+    this->hash_key = this->calc_hash();
+}
+
 void Position::make_move(Move move)
 {
     i32 from = from_sq(move),

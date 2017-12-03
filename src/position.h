@@ -76,6 +76,7 @@ public:
     int evaluate();
     Move best_move();
     void make_move(Move move);
+    void make_null_move();
 
 private:
     // Internal operations
