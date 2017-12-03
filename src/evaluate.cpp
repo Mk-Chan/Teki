@@ -186,7 +186,7 @@ int Evaluator::get_game_phase()
 Score Evaluator::eval_pawns()
 {
     Score value;
-    u64 all_pawns_bb = pos.piece_bb(PAWN);
+    u64 their_pawns_bb = pos.piece_bb(PAWN, THEM);
     u64 pawn_bb = pos.piece_bb(PAWN, US);
 
     // Squares covered by our pawns' attacks
@@ -213,13 +213,13 @@ Score Evaluator::eval_pawns()
         if (lookups::north(sq) & pawn_bb)
             value += doubled_pawns;
 
+        // Passed pawn
+        else if (!(lookups::passed_pawn_mask(sq) & their_pawns_bb))
+            this->passed_pawn_bb[this->side] ^= BB(sq);
+
         // Isolated Pawn
         if (!(lookups::adjacent_files(sq) & pawn_bb))
             value += isolated_pawn;
-
-        // Passed pawn
-        if (!(lookups::passed_pawn_mask(sq) & all_pawns_bb))
-            this->passed_pawn_bb[this->side] ^= BB(sq);
     }
     return value;
 }
