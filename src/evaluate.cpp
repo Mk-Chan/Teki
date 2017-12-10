@@ -20,14 +20,6 @@
 #include "utils.h"
 #include "evaluate.h"
 
-enum PassedPawnType
-{
-    CANNOT_ADVANCE,
-    UNSAFE_ADVANCE,
-    PROTECTED_ADVANCE,
-    SAFE_ADVANCE
-};
-
 int piece_phase[5] = { 1, 10, 10, 20, 40 };
 
 Score piece_value[5] = {
@@ -100,6 +92,14 @@ Score psq_tmp[6][32] = {
     }
 };
 
+enum PassedPawnType
+{
+    CANNOT_ADVANCE,
+    UNSAFE_ADVANCE,
+    PROTECTED_ADVANCE,
+    SAFE_ADVANCE
+};
+
 Score passed_pawn[4][7] = {
     { 0, S(4, 4), S(8, 8), S(12, 18), S(27, 35), S(75, 110), S(100, 220) },
     { 0, S(5, 5), S(10, 10), S(15, 20), S(30, 40), S(80, 120), S(120, 250) },
@@ -161,6 +161,7 @@ private:
     // Data members
     int side;
     int king_attacks[2];
+    u64 blocked_pawn_bb[2];
     u64 passed_pawn_bb[2];
     u64 attacked_by[2][8];
     Position& pos;
@@ -169,6 +170,7 @@ private:
 Evaluator::Evaluator(Position& pos) : pos(pos)
 {
     king_attacks[US] = king_attacks[THEM] = 0;
+    blocked_pawn_bb[US] = blocked_pawn_bb[THEM] = 0;
     passed_pawn_bb[US] = passed_pawn_bb[THEM] = 0;
     attacked_by[US][ALL_PIECES] = attacked_by[THEM][ALL_PIECES] = 0;
     for (int pt = PAWN; pt <= KING; ++pt)
@@ -188,6 +190,9 @@ Score Evaluator::eval_pawns()
     Score value;
     u64 their_pawns_bb = pos.piece_bb(PAWN, THEM);
     u64 pawn_bb = pos.piece_bb(PAWN, US);
+
+    // Store blocked pawns
+    this->blocked_pawn_bb[this->side] = ((pawn_bb << 8) & their_pawns_bb) >> 8;
 
     // Squares covered by our pawns' attacks
     u64 attacked = 0;
@@ -228,11 +233,15 @@ Score Evaluator::eval_pieces()
 {
     Score value;
 
-    // Squares covered by their pawns' attacks
+    // Squares which are occupied by our pawns or king or defended by the
+    // opponent's pawns
     u64 mobility_mask = 0;
     mobility_mask |= ((pos.piece_bb(PAWN, THEM) & ~FILE_A_MASK) >> 9);
     mobility_mask |= ((pos.piece_bb(PAWN, THEM) & ~FILE_H_MASK) >> 7);
+    mobility_mask |= this->blocked_pawn_bb[this->side] | pos.piece_bb(KING, US);
     mobility_mask = ~mobility_mask;
+
+    u64 occupancy = pos.occupancy_bb();
 
     // Bishop pair
     if (popcnt(pos.piece_bb(BISHOP, US)) >= 2)
@@ -255,7 +264,7 @@ Score Evaluator::eval_pieces()
             value += psqt[pt][sq];
 
             // Mobility
-            u64 atks_bb = lookups::attacks(pt, sq, pos.occupancy_bb());
+            u64 atks_bb = lookups::attacks(pt, sq, occupancy);
             value += 5 * popcnt(atks_bb & mobility_mask);
 
             // Update attacks
@@ -308,7 +317,7 @@ Score Evaluator::eval_passed_pawns()
         u64 forward = BB(sq + 8);
 
         // Passed pawn value
-        if (forward & pos.occupancy_bb())
+        if (forward & occupancy)
         {
             value += passed_pawn[CANNOT_ADVANCE][rank];
         }
