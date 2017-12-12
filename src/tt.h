@@ -81,7 +81,7 @@ struct TranspositionTable
 
 private:
     TTEntry* table;
-    int size;
+    std::uint32_t size;
 };
 
 inline TranspositionTable::TranspositionTable()
@@ -106,7 +106,7 @@ inline void TranspositionTable::resize(int MB)
     if (MB <= 0)
         MB = 1;
 
-    size = ((1 << 20) * MB) / sizeof(TTEntry);
+    size = ((1 << 20) / sizeof(TTEntry)) * MB;
     delete[] table;
     table = new TTEntry[size];
     clear();
