@@ -101,9 +101,13 @@ enum PassedPawnType
 };
 
 Score passed_pawn[4][7] = {
+    // Pawn cannot advance
     { 0, S(4, 4), S(8, 8), S(12, 18), S(27, 35), S(75, 110), S(100, 220) },
+    // Pawn can advance, destination is attacked and protected
     { 0, S(5, 5), S(10, 10), S(15, 20), S(30, 40), S(80, 120), S(120, 250) },
+    // Pawn can advance, destination square is attacked and protected
     { 0, S(7, 7), S(12, 12), S(17, 22), S(35, 45), S(90, 160), S(130, 300) },
+    // Pawn can advance, destination square is not attacked
     { 0, S(7, 7), S(15, 15), S(20, 25), S(40, 50), S(100, 200), S(150, 400) }
 };
 Score doubled_pawns = S(-10, -10);

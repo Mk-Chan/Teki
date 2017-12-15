@@ -282,12 +282,25 @@ namespace uci
     void print_search(int score, int depth, time_ms time, std::vector<Move>& pv,
                       bool flipped)
     {
-        std::cout << "info"
-                  << " score cp " << score
-                  << " depth " << depth
-                  << " nodes " << controller.nodes_searched
-                  << " time " << time
-                  << " pv " << get_pv_string(pv, flipped)
-                  << std::endl;
+        std::cout << "info";
+        if (std::abs(score) < MAX_MATE_VALUE)
+        {
+            std::cout << " score cp " << score;
+        }
+        else
+        {
+            std::cout << " mate ";
+            if (score < 0)
+                std::cout << (-score - MATE) / 2;
+            else
+                std::cout << (-score + MATE + 1) / 2;
+        }
+        std::cout << " depth " << depth;
+        std::cout << " nodes " << controller.nodes_searched;
+        std::cout << " time " << time;
+        if (time > 1000)
+            std::cout << " nps " << (controller.nodes_searched * 1000) / time;
+        std::cout << " pv " << get_pv_string(pv, flipped);
+        std::cout << std::endl;
     }
 }
