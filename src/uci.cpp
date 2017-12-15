@@ -28,6 +28,11 @@
 
 #define INITIAL_POSITION ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
+enum Options
+{
+    HASH
+};
+
 TranspositionTable tt;
 Controller controller;
 
@@ -95,6 +100,30 @@ namespace handler
                       << std::endl;
         }
         std::cout << "nodes " << count << std::endl;
+    }
+
+    void setoption(std::stringstream& stream)
+    {
+        std::string word;
+        stream >> word;
+        if (word != "name") return;
+
+        int option = -1;
+        stream >> word;
+        if (word == "Hash") option = HASH;
+
+        stream >> word;
+        if (word != "value") return;
+
+        int value;
+        switch (option) {
+        case HASH:
+            stream >> value;
+            tt.resize(value);
+            break;
+        default:
+            return;
+        }
     }
 
     void position(Position& pos, std::stringstream& stream)
@@ -216,6 +245,7 @@ void loop()
         stream >> word;
         if (word == "d") handler::d(pos);
         else if (word == "ucinewgame") handler::ucinewgame();
+        else if (word == "setoption") handler::setoption(stream);
         else if (word == "isready") handler::isready();
         else if (word == "perft") handler::perft(pos, stream);
         else if (word == "position") handler::position(pos, stream);
