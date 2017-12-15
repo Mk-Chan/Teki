@@ -88,6 +88,7 @@ void Position::make_null_move()
     this->inc_half_moves();
     this->ep_sq = INVALID_SQ;
     this->flip();
+    this->prev_hash_keys.push_back(this->hash_key);
     this->hash_key = this->calc_hash();
 }
 
