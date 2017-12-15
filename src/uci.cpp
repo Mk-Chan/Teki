@@ -283,13 +283,14 @@ namespace uci
                       bool flipped)
     {
         std::cout << "info";
+        std::cout << " score ";
         if (std::abs(score) < MAX_MATE_VALUE)
         {
-            std::cout << " score cp " << score;
+            std::cout << "cp " << score;
         }
         else
         {
-            std::cout << " mate ";
+            std::cout << "mate ";
             if (score < 0)
                 std::cout << (-score - MATE) / 2;
             else
