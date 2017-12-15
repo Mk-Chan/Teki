@@ -116,6 +116,31 @@ Score isolated_pawn = S(-10, -10);
 Score rook_on_7th_rank = S(40, 20);
 Score bishop_pair = S(50, 80);
 
+Score piece_mobility[5][28] = {
+    {},
+    {   // Knight
+        S(-50, -50), S(-30, -30), S(-10, -10), S(0, 0), S(10, 10), S(20, 20),
+        S(25, 25), S(30, 30), S(35, 35)
+    },
+    {   // Bishop
+        S(-40, -40), S(-20, -20), S(0, 0), S(10, 10), S(20, 20), S(25, 25),
+        S(30, 30), S(30, 30), S(35, 35), S(35, 35), S(40, 40), S(40, 40),
+        S(45, 45), S(45, 45)
+    },
+    {   // Rook
+        S(-30, -30), S(-20, -20), S(-10, -10), S(0, 0), S(5, 10), S(10, 20),
+        S(15, 30), S(20, 40), S(25, 50), S(30, 55), S(35, 60), S(40, 65),
+        S(45, 70), S(50, 75), S(55, 80)
+    },
+    {   // Queen
+        S(-30, -30), S(-20, -20), S(-10, -10), S(0, 0), S(5, 5), S(10, 10),
+        S(15, 15), S(20, 20), S(25, 25), S(30, 30), S(35, 35), S(40, 40),
+        S(45, 45), S(50, 50), S(55, 55), S(60, 60), S(60, 65), S(60, 70),
+        S(60, 75), S(60, 80), S(60, 85), S(60, 90), S(60, 90), S(60, 90),
+        S(60, 90), S(60, 90), S(60, 90), S(60, 90)
+    }
+};
+
 int king_attack_weight[5] = { 0, 3, 3, 4, 5 };
 int king_attack_table[100] = { // Taken from CPW(Glaurung 1.2)
       0,   0,   0,   1,   1,   2,   3,   4,   5,   6,
@@ -269,7 +294,7 @@ Score Evaluator::eval_pieces()
 
             // Mobility
             u64 atks_bb = lookups::attacks(pt, sq, occupancy);
-            value += 5 * popcnt(atks_bb & mobility_mask);
+            value += piece_mobility[pt][popcnt(atks_bb & mobility_mask)];
 
             // Update attacks
             this->attacked_by[this->side][pt] |= atks_bb;
