@@ -43,8 +43,7 @@ enum GamePhase
 
 enum Color
 {
-    WHITE, BLACK,
-    US = 0, THEM,
+    US, THEM,
     NUM_COLORS
 };
 
@@ -87,8 +86,8 @@ enum CastlingType
 
 enum CastlingRights
 {
-    WHITE_OO = 1, WHITE_OOO = 2,
-    BLACK_OO = 4, BLACK_OOO = 8
+    US_OO = 1, US_OOO = 2,
+    THEM_OO = 4, THEM_OOO = 8
 };
 
 inline int get_sq(int file, int rank) { return (rank << 3) ^ file; }

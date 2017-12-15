@@ -39,7 +39,7 @@ char piece_char(int pt, int c)
     case KING: pchar = 'k'; break;
     default: pchar = 'd'; break;
     }
-    return c == WHITE ? std::toupper(pchar) : pchar;
+    return c == US ? std::toupper(pchar) : pchar;
 }
 
 void Position::flip()
@@ -86,8 +86,8 @@ void Position::display()
         {
             int color = ((this->color_bb(US) & BB(sq ^ 56)) && !this->is_flipped())
                      || ((this->color_bb(THEM) & BB(sq ^ 56)) && this->is_flipped())
-                      ? WHITE
-                      : BLACK;
+                      ? US
+                      : THEM;
             std::cout << piece_char(piece, color) << " ";
         }
     }
@@ -150,18 +150,18 @@ void Position::init(std::stringstream& stream)
             int sq = i ^ 56;
             int pt, pc;
             switch (c) {
-            case 'p': pt = PAWN, pc = BLACK; break;
-            case 'r': pt = ROOK, pc = BLACK; break;
-            case 'n': pt = KNIGHT, pc = BLACK; break;
-            case 'b': pt = BISHOP, pc = BLACK; break;
-            case 'q': pt = QUEEN, pc = BLACK; break;
-            case 'k': pt = KING, pc = BLACK; break;
-            case 'P': pt = PAWN, pc = WHITE; break;
-            case 'R': pt = ROOK, pc = WHITE; break;
-            case 'N': pt = KNIGHT, pc = WHITE; break;
-            case 'B': pt = BISHOP, pc = WHITE; break;
-            case 'Q': pt = QUEEN, pc = WHITE; break;
-            case 'K': pt = KING, pc = WHITE; break;
+            case 'p': pt = PAWN, pc = THEM; break;
+            case 'r': pt = ROOK, pc = THEM; break;
+            case 'n': pt = KNIGHT, pc = THEM; break;
+            case 'b': pt = BISHOP, pc = THEM; break;
+            case 'q': pt = QUEEN, pc = THEM; break;
+            case 'k': pt = KING, pc = THEM; break;
+            case 'P': pt = PAWN, pc = US; break;
+            case 'R': pt = ROOK, pc = US; break;
+            case 'N': pt = KNIGHT, pc = US; break;
+            case 'B': pt = BISHOP, pc = US; break;
+            case 'Q': pt = QUEEN, pc = US; break;
+            case 'K': pt = KING, pc = US; break;
             default : pt = -1, pc = -1; break; // Error
             }
             this->put_piece(sq, pt, pc);
@@ -184,10 +184,10 @@ void Position::init(std::stringstream& stream)
         else if (!castling::is_frc)
         {
             switch (c) {
-            case 'K': this->castling_rights |= WHITE_OO; break;
-            case 'Q': this->castling_rights |= WHITE_OOO; break;
-            case 'k': this->castling_rights |= BLACK_OO; break;
-            case 'q': this->castling_rights |= BLACK_OOO; break;
+            case 'K': this->castling_rights |= US_OO; break;
+            case 'Q': this->castling_rights |= US_OOO; break;
+            case 'k': this->castling_rights |= THEM_OO; break;
+            case 'q': this->castling_rights |= THEM_OOO; break;
             default: break;
             }
         }
@@ -259,7 +259,7 @@ u64 Position::calc_hash()
         this->flip();
 
     u64 hash_key = u64(0);
-    for (int c = WHITE; c <= BLACK; ++c) {
+    for (int c = US; c <= THEM; ++c) {
         for (int pt = PAWN; pt <= KING; ++pt) {
             u64 bb = this->piece_bb(pt, c);
             while (bb) {

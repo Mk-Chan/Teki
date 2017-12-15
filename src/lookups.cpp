@@ -252,7 +252,7 @@ void init_directions()
 
 void init_keys()
 {
-    for (int c = WHITE; c <= BLACK; ++c) {
+    for (int c = US; c <= THEM; ++c) {
         for (int pt = PAWN; pt <= KING; ++pt) {
             for (int sq = A1; sq <= H8; ++sq) {
                 psq_keys_bb[c][pt][sq] = utils::rand_u64(0, UINT64_MAX);

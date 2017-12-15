@@ -126,7 +126,7 @@ void gen_quiet_promotions(const Position& pos, std::vector<Move>& mlist)
 
 void gen_castling(const Position& pos, std::vector<Move>& mlist)
 {
-    static int const castling_side[2] = { WHITE_OO, WHITE_OOO };
+    static int const castling_side[2] = { US_OO, US_OOO };
     static int const king_end_pos[2] = { G1, C1 };
     static int const rook_end_pos[2] = { F1, D1 };
 
