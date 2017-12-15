@@ -43,43 +43,43 @@ namespace lookups
 {
     extern void init();
 
-    extern u64 psq_key(i32 c, i32 pt, i32 sq);
-    extern u64 castle_key(i32 rights);
-    extern u64 ep_key(i32 sq);
+    extern u64 psq_key(int c, int pt, int sq);
+    extern u64 castle_key(int rights);
+    extern u64 ep_key(int sq);
     extern u64 stm_key();
 
-    extern i32 distance(i32 from, i32 to);
-    extern u64 ray(i32 from, i32 to);
-    extern u64 xray(i32 from, i32 to);
-    extern u64 full_ray(i32 from, i32 to);
-    extern u64 intervening_sqs(i32 from, i32 to);
-    extern u64 adjacent_files(i32 square);
-    extern u64 file_mask(i32 square);
-    extern u64 rank_mask(i32 square);
+    extern int distance(int from, int to);
+    extern u64 ray(int from, int to);
+    extern u64 xray(int from, int to);
+    extern u64 full_ray(int from, int to);
+    extern u64 intervening_sqs(int from, int to);
+    extern u64 adjacent_files(int square);
+    extern u64 file_mask(int square);
+    extern u64 rank_mask(int square);
 
 
-    extern u64 passed_pawn_mask(i32 square);
-    extern u64 king_danger_zone(i32 square);
+    extern u64 passed_pawn_mask(int square);
+    extern u64 king_danger_zone(int square);
 
-    extern u64 north(i32 square);
-    extern u64 south(i32 square);
-    extern u64 east(i32 square);
-    extern u64 west(i32 square);
-    extern u64 northeast(i32 square);
-    extern u64 northwest(i32 square);
-    extern u64 southeast(i32 square);
-    extern u64 southwest(i32 square);
+    extern u64 north(int square);
+    extern u64 south(int square);
+    extern u64 east(int square);
+    extern u64 west(int square);
+    extern u64 northeast(int square);
+    extern u64 northwest(int square);
+    extern u64 southeast(int square);
+    extern u64 southwest(int square);
 
-    extern u64 pawn(i32 square, i32 side);
-    extern u64 knight(i32 square);
-    extern u64 bishop(i32 square);
-    extern u64 rook(i32 square);
-    extern u64 queen(i32 square);
-    extern u64 bishop(i32 square, u64 occupancy);
-    extern u64 rook(i32 square, u64 occupancy);
-    extern u64 queen(i32 square, u64 occupancy);
-    extern u64 king(i32 square);
-    extern u64 attacks(i32 piece_type, i32 square, u64 occupancy, i32 side=US);
+    extern u64 pawn(int square, int side);
+    extern u64 knight(int square);
+    extern u64 bishop(int square);
+    extern u64 rook(int square);
+    extern u64 queen(int square);
+    extern u64 bishop(int square, u64 occupancy);
+    extern u64 rook(int square, u64 occupancy);
+    extern u64 queen(int square, u64 occupancy);
+    extern u64 king(int square);
+    extern u64 attacks(int piece_type, int square, u64 occupancy, int side=US);
 }
 
 #endif

@@ -21,7 +21,7 @@
 
 std::string get_move_string(Move move, bool flipped)
 {
-    i32 from = from_sq(move),
+    int from = from_sq(move),
         to = to_sq(move);
 
     if (flipped) {
@@ -35,7 +35,7 @@ std::string get_move_string(Move move, bool flipped)
     move_string.push_back('a' + file_of(to));
     move_string.push_back('1' + rank_of(to));
 
-    i32 prom = prom_type(move);
+    int prom = prom_type(move);
     switch (prom) {
     case QUEEN:
         move_string.push_back('q');
@@ -57,8 +57,8 @@ std::string get_move_string(Move move, bool flipped)
 
 bool Position::legal_move(Move move) const
 {
-    i32 from = from_sq(move);
-    i32 ksq = this->position_of(KING, US);
+    int from = from_sq(move);
+    int ksq = this->position_of(KING, US);
     if (move & ENPASSANT)
     {
         u64 to_bb = BB(this->ep_sq);
@@ -94,7 +94,7 @@ void Position::make_null_move()
 
 void Position::make_move(Move move)
 {
-    i32 from = from_sq(move),
+    int from = from_sq(move),
         to = to_sq(move);
 
     this->castling_rights &= castling::spoilers[from]
@@ -133,7 +133,7 @@ void Position::make_move(Move move)
             this->remove_piece(to - 8, PAWN, THEM);
             break;
         case CASTLING:
-            i32 rfrom, rto;
+            int rfrom, rto;
             switch (to) {
             case C1:
                 rto = D1;

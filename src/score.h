@@ -37,24 +37,24 @@ struct Score
     const Score operator*(const Score& rhs) const;
     const Score operator/(const Score& rhs) const;
 
-    const Score operator+(const i32 rhs) const;
-    const Score operator-(const i32 rhs) const;
-    const Score operator*(const i32 rhs) const;
-    const Score operator/(const i32 rhs) const;
+    const Score operator+(const int rhs) const;
+    const Score operator-(const int rhs) const;
+    const Score operator*(const int rhs) const;
+    const Score operator/(const int rhs) const;
 
     const Score& operator+=(const Score& rhs);
     const Score& operator-=(const Score& rhs);
     const Score& operator*=(const Score& rhs);
     const Score& operator/=(const Score& rhs);
 
-    const Score& operator+=(const i32 rhs);
-    const Score& operator-=(const i32 rhs);
-    const Score& operator*=(const i32 rhs);
-    const Score& operator/=(const i32 rhs);
+    const Score& operator+=(const int rhs);
+    const Score& operator-=(const int rhs);
+    const Score& operator*=(const int rhs);
+    const Score& operator/=(const int rhs);
 
 private:
-    i32 mg;
-    i32 eg;
+    int mg;
+    int eg;
 };
 
 inline int Score::value() const
@@ -73,10 +73,10 @@ inline const Score Score::operator-(const Score& rhs) const { return Score(mg - 
 inline const Score Score::operator*(const Score& rhs) const { return Score(mg * rhs.mg, eg * rhs.eg); }
 inline const Score Score::operator/(const Score& rhs) const { return Score(mg / rhs.mg, eg / rhs.eg); }
 
-inline const Score Score::operator+(const i32 rhs) const { return Score(mg + rhs, eg + rhs); }
-inline const Score Score::operator-(const i32 rhs) const { return Score(mg - rhs, eg - rhs); }
-inline const Score Score::operator*(const i32 rhs) const { return Score(mg * rhs, eg * rhs); }
-inline const Score Score::operator/(const i32 rhs) const { return Score(mg / rhs, eg / rhs); }
+inline const Score Score::operator+(const int rhs) const { return Score(mg + rhs, eg + rhs); }
+inline const Score Score::operator-(const int rhs) const { return Score(mg - rhs, eg - rhs); }
+inline const Score Score::operator*(const int rhs) const { return Score(mg * rhs, eg * rhs); }
+inline const Score Score::operator/(const int rhs) const { return Score(mg / rhs, eg / rhs); }
 
 inline const Score& Score::operator+=(const Score& rhs)
 {
@@ -103,25 +103,25 @@ inline const Score& Score::operator/=(const Score& rhs)
     return *this;
 }
 
-inline const Score& Score::operator+=(const i32 rhs)
+inline const Score& Score::operator+=(const int rhs)
 {
     mg += rhs;
     eg += rhs;
     return *this;
 }
-inline const Score& Score::operator-=(const i32 rhs)
+inline const Score& Score::operator-=(const int rhs)
 {
     mg -= rhs;
     eg -= rhs;
     return *this;
 }
-inline const Score& Score::operator*=(const i32 rhs)
+inline const Score& Score::operator*=(const int rhs)
 {
     mg *= rhs;
     eg *= rhs;
     return *this;
 }
-inline const Score& Score::operator/=(const i32 rhs)
+inline const Score& Score::operator/=(const int rhs)
 {
     mg /= rhs;
     eg /= rhs;

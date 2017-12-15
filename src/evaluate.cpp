@@ -353,7 +353,7 @@ Score Evaluator::eval_passed_pawns()
 int Evaluator::evaluate()
 {
     Score score;
-    for (i32 side = US; side <= THEM; ++side) {
+    for (int side = US; side <= THEM; ++side) {
         this->side = side;
 
         score += eval_pawns();
@@ -363,7 +363,7 @@ int Evaluator::evaluate()
         score = -score;
     }
 
-    for (i32 side = US; side <= THEM; ++side) {
+    for (int side = US; side <= THEM; ++side) {
         this->side = side;
 
         score += eval_king();

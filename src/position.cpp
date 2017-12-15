@@ -23,11 +23,11 @@
 namespace castling
 {
     bool is_frc = false;
-    i32 rook_sqs[2];
+    int rook_sqs[2];
     u8 spoilers[64];
 }
 
-char piece_char(i32 pt, i32 c)
+char piece_char(int pt, int c)
 {
     char pchar;
     switch (pt) {
@@ -63,10 +63,10 @@ void Position::flip()
     this->flipped = !this->flipped;
 }
 
-i32 Position::piece_on(i32 sq) const
+int Position::piece_on(int sq) const
 {
     u64 sq_bb = BB(sq);
-    for (i32 pt = PAWN; pt < NUM_PIECE_TYPES; ++pt)
+    for (int pt = PAWN; pt < NUM_PIECE_TYPES; ++pt)
         if (this->bb[pt] & sq_bb)
             return pt;
     return NO_PIECE;
@@ -74,17 +74,17 @@ i32 Position::piece_on(i32 sq) const
 
 void Position::display()
 {
-    for (i32 sq = A1; sq < NUM_SQUARES; ++sq) {
+    for (int sq = A1; sq < NUM_SQUARES; ++sq) {
         if (sq && !(sq & 7))
             std::cout << '\n';
-        i32 piece = this->piece_on(sq ^ 56);
+        int piece = this->piece_on(sq ^ 56);
         if (piece == NO_PIECE)
         {
             std::cout << "- ";
         }
         else
         {
-            i32 color = ((this->color_bb(US) & BB(sq ^ 56)) && !this->is_flipped())
+            int color = ((this->color_bb(US) & BB(sq ^ 56)) && !this->is_flipped())
                      || ((this->color_bb(THEM) & BB(sq ^ 56)) && this->is_flipped())
                       ? WHITE
                       : BLACK;
@@ -98,9 +98,9 @@ void Position::display()
 
 void Position::clear()
 {
-    for (i32 i = 0; i < 6; ++i)
+    for (int i = 0; i < 6; ++i)
         this->bb[i] = 0;
-    for (i32 i = 0; i < 2; ++i)
+    for (int i = 0; i < 2; ++i)
         this->color[i] = 0;
     this->flipped = false;
     this->ep_sq = INVALID_SQ;
@@ -114,7 +114,7 @@ void Position::clear()
 void Position::init(std::stringstream& stream)
 {
     this->clear();
-    for (i32 i = 0 ; i < 64; ++i)
+    for (int i = 0 ; i < 64; ++i)
         castling::spoilers[i] = 15;
 
     if (!castling::is_frc)
@@ -133,8 +133,8 @@ void Position::init(std::stringstream& stream)
 
     // Piece list
     stream >> part;
-    i32 index = 0;
-    for (i32 i = 0; i < 64;) {
+    int index = 0;
+    for (int i = 0; i < 64;) {
         char c = part[index];
         ++index;
         if (c > '0' && c < '9')
@@ -147,8 +147,8 @@ void Position::init(std::stringstream& stream)
         }
         else
         {
-            i32 sq = i ^ 56;
-            i32 pt, pc;
+            int sq = i ^ 56;
+            int pt, pc;
             switch (c) {
             case 'p': pt = PAWN, pc = BLACK; break;
             case 'r': pt = ROOK, pc = BLACK; break;
@@ -175,7 +175,7 @@ void Position::init(std::stringstream& stream)
 
     // Castling
     stream >> part;
-    for (i32 i = 0; i < part.length(); ++i) {
+    for (int i = 0; i < part.length(); ++i) {
         char c = part[i];
         if (c == '-')
         {
@@ -208,12 +208,12 @@ void Position::init(std::stringstream& stream)
     }
 
     // Halfmove number
-    i32 half_moves;
+    int half_moves;
     stream >> half_moves;
     this->half_moves = half_moves;
 
     // Fullmove number
-    i32 full_moves; // dummy
+    int full_moves; // dummy
     stream >> full_moves;
 
     if (need_to_flip)
@@ -222,17 +222,17 @@ void Position::init(std::stringstream& stream)
     this->hash_key = this->calc_hash();
 }
 
-u64 Position::attackers_to(i32 sq) const
+u64 Position::attackers_to(int sq) const
 {
     return this->attackers_to(sq, this->occupancy_bb());
 }
 
-u64 Position::attackers_to(i32 sq, i32 by_side) const
+u64 Position::attackers_to(int sq, int by_side) const
 {
     return this->attackers_to(sq) & this->color_bb(by_side);
 }
 
-u64 Position::attackers_to(i32 sq, u64 occupancy) const
+u64 Position::attackers_to(int sq, u64 occupancy) const
 {
     return (lookups::rook(sq, occupancy) & (piece_bb(ROOK) | piece_bb(QUEEN)))
          | (lookups::bishop(sq, occupancy) & (piece_bb(BISHOP) | piece_bb(QUEEN)))
@@ -242,12 +242,12 @@ u64 Position::attackers_to(i32 sq, u64 occupancy) const
          | (lookups::king(sq) & piece_bb(KING));
 }
 
-u64 Position::attackers_to(i32 sq, i32 by_side, u64 occupancy) const
+u64 Position::attackers_to(int sq, int by_side, u64 occupancy) const
 {
     return this->attackers_to(sq, occupancy) & this->color_bb(by_side);
 }
 
-u64 Position::checkers_to(i32 side) const
+u64 Position::checkers_to(int side) const
 {
         return attackers_to(this->position_of(KING, side), !side);
 }
@@ -259,8 +259,8 @@ u64 Position::calc_hash()
         this->flip();
 
     u64 hash_key = u64(0);
-    for (i32 c = WHITE; c <= BLACK; ++c) {
-        for (i32 pt = PAWN; pt <= KING; ++pt) {
+    for (int c = WHITE; c <= BLACK; ++c) {
+        for (int pt = PAWN; pt <= KING; ++pt) {
             u64 bb = this->piece_bb(pt, c);
             while (bb) {
                 hash_key ^= lookups::psq_key(c, pt, fbitscan(bb));
@@ -282,9 +282,9 @@ u64 Position::calc_hash()
     return hash_key;
 }
 
-u64 Position::pinned(i32 side) const
+u64 Position::pinned(int side) const
 {
-    i32 ksq = this->position_of(KING, side);
+    int ksq = this->position_of(KING, side);
     u64 qr_bb = this->piece_bb(QUEEN) | this->piece_bb(ROOK);
     u64 qb_bb = this->piece_bb(QUEEN) | this->piece_bb(BISHOP);
     u64 nside_bb = this->color_bb(!side);
@@ -295,7 +295,7 @@ u64 Position::pinned(i32 side) const
 
     u64 pinned = 0;
     while (pinners) {
-        i32 sq = fbitscan(pinners);
+        int sq = fbitscan(pinners);
         pinners &= pinners - 1;
         u64 bb = lookups::intervening_sqs(sq, ksq) & occupancy_bb;
         if (!(bb & (bb - 1)))
@@ -305,7 +305,7 @@ u64 Position::pinned(i32 side) const
     return pinned;
 }
 
-u64 Position::perft(i32 depth, bool root) const
+u64 Position::perft(int depth, bool root) const
 {
     if (depth == 0)
         return u64(1);

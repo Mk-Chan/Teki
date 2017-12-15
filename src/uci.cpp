@@ -85,12 +85,12 @@ namespace handler
 
     void perft(Position& pos, std::stringstream& stream)
     {
-        i32 depth;
+        int depth;
         if (!(stream >> depth))
             depth = 1;
 
         u64 count = u64(1);
-        for (i32 d = 1; d <= depth; ++d) {
+        for (int d = 1; d <= depth; ++d) {
             time_ms t1 = utils::curr_time();
             count = pos.perft(d);
             time_ms t2 = utils::curr_time();
@@ -264,7 +264,7 @@ namespace uci
         loop();
     }
 
-    void print_currmove(Move move, i32 move_num, time_ms start_time, bool flipped)
+    void print_currmove(Move move, int move_num, time_ms start_time, bool flipped)
     {
         time_ms curr_time = utils::curr_time();
         time_ms time_passed = curr_time - start_time;

@@ -26,7 +26,7 @@ u64 castle_keys_bb[16];
 u64 ep_keys_bb[64];
 u64 stm_key_bb;
 
-i32 distance_val[64][64];
+int distance_val[64][64];
 u64 ray_bb[64][64];
 u64 xray_bb[64][64];
 u64 full_ray_bb[64][64];
@@ -56,7 +56,7 @@ u64 southwest_bb[64];
 
 void print_bb(u64 bb)
 {
-    for (i32 sq = 0; sq < NUM_SQUARES; ++sq) {
+    for (int sq = 0; sq < NUM_SQUARES; ++sq) {
         if (sq && !(sq & 7))
             std::cout << '\n';
 
@@ -70,7 +70,7 @@ void print_bb(u64 bb)
 
 void init_non_sliders()
 {
-    for (i32 sq = A1; sq < NUM_SQUARES; ++sq) {
+    for (int sq = A1; sq < NUM_SQUARES; ++sq) {
         king_attacks[sq] = knight_attacks[sq] = 0;
         pawn_attacks[US][sq] = pawn_attacks[THEM][sq] = 0;
 
@@ -106,7 +106,7 @@ void init_non_sliders()
 
 void init_pseudo_sliders()
 {
-    for (i32 sq = A1; sq < NUM_SQUARES; ++sq) {
+    for (int sq = A1; sq < NUM_SQUARES; ++sq) {
         bishop_attacks[sq] = lookups::northeast(sq) | lookups::northwest(sq)
                            | lookups::southeast(sq) | lookups::southwest(sq);
         rook_attacks[sq] = lookups::north(sq) | lookups::south(sq)
@@ -133,8 +133,8 @@ void init_misc()
             adjacent_files_bb[i] |= BB(i+1) | north_bb[i+1] | south_bb[i+1];
         }
         for (j = 0; j < 64; j++) {
-            distance_val[i][j] = std::max(abs(i32(rank_of(i)) - i32(rank_of(j))),
-                                      abs(i32(file_of(i)) - i32(file_of(j))));
+            distance_val[i][j] = std::max(abs(int(rank_of(i)) - int(rank_of(j))),
+                                      abs(int(file_of(i)) - int(file_of(j))));
             intervening_ray_bb[i][j] = 0;
             if (i == j)
                 continue;
@@ -216,7 +216,7 @@ void init_directions()
     s_mask = ~(RANK_8_MASK);
     w_mask = ~(FILE_H_MASK);
 
-    for (i32 sq = A1; sq < NUM_SQUARES; ++sq) {
+    for (int sq = A1; sq < NUM_SQUARES; ++sq) {
         u64 sq_bb = BB(sq);
 
         nw = (sq_bb << 7) & nw_mask;
@@ -228,7 +228,7 @@ void init_directions()
         s = (sq_bb >> 8) & s_mask;
         w = (sq_bb >> 1) & w_mask;
 
-        for (i32 times = 0; times < 6; ++times) {
+        for (int times = 0; times < 6; ++times) {
             nw |= (nw << 7) & nw_mask;
             ne |= (ne << 9) & ne_mask;
             sw |= (sw >> 9) & sw_mask;
@@ -252,17 +252,17 @@ void init_directions()
 
 void init_keys()
 {
-    for (i32 c = WHITE; c <= BLACK; ++c) {
-        for (i32 pt = PAWN; pt <= KING; ++pt) {
-            for (i32 sq = A1; sq <= H8; ++sq) {
+    for (int c = WHITE; c <= BLACK; ++c) {
+        for (int pt = PAWN; pt <= KING; ++pt) {
+            for (int sq = A1; sq <= H8; ++sq) {
                 psq_keys_bb[c][pt][sq] = utils::rand_u64(0, UINT64_MAX);
             }
         }
     }
-    for (i32 sq = A1; sq <= H8; ++sq) {
+    for (int sq = A1; sq <= H8; ++sq) {
         ep_keys_bb[sq] = utils::rand_u64(0, UINT64_MAX);
     }
-    for (i32 cr = 0; cr < 16; ++cr) {
+    for (int cr = 0; cr < 16; ++cr) {
         castle_keys_bb[cr] = utils::rand_u64(0, UINT64_MAX);
     }
     stm_key_bb = utils::rand_u64(0, UINT64_MAX);
@@ -287,40 +287,40 @@ namespace lookups
         init_eval_masks();
     }
 
-    u64 psq_key(i32 c, i32 pt, i32 sq) { return psq_keys_bb[c][pt][sq]; }
-    u64 castle_key(i32 rights) { return castle_keys_bb[rights]; }
-    u64 ep_key(i32 sq) { return ep_keys_bb[sq]; }
+    u64 psq_key(int c, int pt, int sq) { return psq_keys_bb[c][pt][sq]; }
+    u64 castle_key(int rights) { return castle_keys_bb[rights]; }
+    u64 ep_key(int sq) { return ep_keys_bb[sq]; }
     u64 stm_key() { return stm_key_bb; }
 
-    i32 distance(i32 from, i32 to) { return distance_val[from][to]; }
-    u64 ray(i32 from, i32 to) { return ray_bb[from][to]; }
-    u64 xray(i32 from, i32 to) { return xray_bb[from][to]; }
-    u64 full_ray(i32 from, i32 to) { return full_ray_bb[from][to]; }
-    u64 intervening_sqs(i32 from, i32 to) { return intervening_ray_bb[from][to]; }
-    u64 adjacent_files(i32 sq) { return adjacent_files_bb[sq]; }
-    u64 file_mask(i32 sq) { return file_mask_bb[sq]; }
-    u64 rank_mask(i32 sq) { return rank_mask_bb[sq]; }
+    int distance(int from, int to) { return distance_val[from][to]; }
+    u64 ray(int from, int to) { return ray_bb[from][to]; }
+    u64 xray(int from, int to) { return xray_bb[from][to]; }
+    u64 full_ray(int from, int to) { return full_ray_bb[from][to]; }
+    u64 intervening_sqs(int from, int to) { return intervening_ray_bb[from][to]; }
+    u64 adjacent_files(int sq) { return adjacent_files_bb[sq]; }
+    u64 file_mask(int sq) { return file_mask_bb[sq]; }
+    u64 rank_mask(int sq) { return rank_mask_bb[sq]; }
 
-    u64 passed_pawn_mask(i32 square) { return passed_pawn_mask_bb[square]; }
-    u64 king_danger_zone(i32 square) { return king_danger_zone_bb[square]; }
+    u64 passed_pawn_mask(int square) { return passed_pawn_mask_bb[square]; }
+    u64 king_danger_zone(int square) { return king_danger_zone_bb[square]; }
 
-    u64 north(i32 square) { return north_bb[square]; }
-    u64 south(i32 square) { return south_bb[square]; }
-    u64 east(i32 square) { return east_bb[square]; }
-    u64 west(i32 square) { return west_bb[square]; }
-    u64 northeast(i32 square) { return northeast_bb[square]; }
-    u64 northwest(i32 square) { return northwest_bb[square]; }
-    u64 southeast(i32 square) { return southeast_bb[square]; }
-    u64 southwest(i32 square) { return southwest_bb[square]; }
+    u64 north(int square) { return north_bb[square]; }
+    u64 south(int square) { return south_bb[square]; }
+    u64 east(int square) { return east_bb[square]; }
+    u64 west(int square) { return west_bb[square]; }
+    u64 northeast(int square) { return northeast_bb[square]; }
+    u64 northwest(int square) { return northwest_bb[square]; }
+    u64 southeast(int square) { return southeast_bb[square]; }
+    u64 southwest(int square) { return southwest_bb[square]; }
 
-    u64 pawn(i32 square, i32 side) { return pawn_attacks[side][square]; }
-    u64 knight(i32 square) { return knight_attacks[square]; }
-    u64 bishop(i32 square) { return bishop_attacks[square]; }
-    u64 rook(i32 square) { return rook_attacks[square]; }
-    u64 queen(i32 square) { return queen_attacks[square]; }
-    u64 king(i32 square) { return king_attacks[square]; }
+    u64 pawn(int square, int side) { return pawn_attacks[side][square]; }
+    u64 knight(int square) { return knight_attacks[square]; }
+    u64 bishop(int square) { return bishop_attacks[square]; }
+    u64 rook(int square) { return rook_attacks[square]; }
+    u64 queen(int square) { return queen_attacks[square]; }
+    u64 king(int square) { return king_attacks[square]; }
 
-    u64 bishop(i32 square, u64 occupancy)
+    u64 bishop(int square, u64 occupancy)
     {
         u64 atk = bishop(square);
         u64 nw_blockers = (northwest(square) & occupancy) | BB(A8);
@@ -336,7 +336,7 @@ namespace lookups
         return atk;
     }
 
-    u64 rook(i32 square, u64 occupancy)
+    u64 rook(int square, u64 occupancy)
     {
         u64 atk = rook(square);
         u64 n_blockers = (north(square) & occupancy) | BB(H8);
@@ -352,7 +352,7 @@ namespace lookups
         return atk;
     }
 
-    u64 queen(i32 square, u64 occupancy)
+    u64 queen(int square, u64 occupancy)
     {
         u64 atk = queen(square);
         u64 nw_blockers = (northwest(square) & occupancy) | BB(A8);
@@ -376,7 +376,7 @@ namespace lookups
         return atk;
     }
 
-    u64 attacks(i32 piece_type, i32 square, u64 occupancy, i32 side)
+    u64 attacks(int piece_type, int square, u64 occupancy, int side)
     {
         switch (piece_type) {
         case PAWN: return pawn(square, side);
