@@ -60,19 +60,27 @@ struct SearchStack
     std::vector<Move> pv;
 };
 
-int history[6][64];
-
-inline void reduce_history(bool to_zero=false)
+struct SearchGlobals
 {
-    for (int pt = PAWN; pt <= KING; ++pt) {
-        for (int sq = 0; sq < 64; ++sq) {
-            if (to_zero)
-                history[pt][sq] = 0;
-            else
-                history[pt][sq] /= 8;
+    SearchGlobals()
+    {
+        reduce_history(true);
+    }
+
+    inline void reduce_history(bool to_zero=false)
+    {
+        for (int pt = PAWN; pt <= KING; ++pt) {
+            for (int sq = 0; sq < 64; ++sq) {
+                if (to_zero)
+                    history[pt][sq] = 0;
+                else
+                    history[pt][sq] /= 8;
+            }
         }
     }
-}
+
+    int history[6][64];
+};
 
 inline int value_to_tt(int value, int ply)
 {
@@ -98,7 +106,7 @@ inline bool stopped()
         || (controller.time_dependent && utils::curr_time() >= controller.end_time);
 }
 
-void reorder_moves(const Position& pos, SearchStack* ss, Move tt_move=0)
+void reorder_moves(const Position& pos, SearchStack* ss, SearchGlobals& sg, Move tt_move=0)
 {
     std::vector<Move>& mlist = ss->mlist;
     std::vector<int>& orderlist = ss->orderlist;
@@ -156,7 +164,7 @@ void reorder_moves(const Position& pos, SearchStack* ss, Move tt_move=0)
         }
         else
         {
-            order = history[pos.piece_on(from_sq(move))][to_sq(move)];
+            order = sg.history[pos.piece_on(from_sq(move))][to_sq(move)];
         }
 
 push_order:
@@ -180,7 +188,8 @@ push_order:
         assert(orderlist[i-1] >= orderlist[i]);
 }
 
-int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
+int qsearch(Position& pos, SearchStack* const ss, SearchGlobals& sg,
+            int alpha, int beta)
 {
     ++controller.nodes_searched;
 
@@ -215,7 +224,7 @@ int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
         pos.generate_in_check_movelist(mlist);
     else
         pos.generate_quiesce_movelist(mlist);
-    reorder_moves(pos, ss);
+    reorder_moves(pos, ss, sg);
 
     int legal_moves = 0;
     for (Move move : mlist) {
@@ -226,7 +235,7 @@ int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
 
         ++legal_moves;
 
-        int value = -qsearch(child_pos, ss + 1, -beta, -alpha);
+        int value = -qsearch(child_pos, ss + 1, sg, -beta, -alpha);
 
         if (!(controller.nodes_searched & 2047) && stopped())
             return 0;
@@ -246,11 +255,12 @@ int qsearch(Position& pos, SearchStack* const ss, int alpha, int beta)
 }
 
 template <bool pv_node>
-int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
+int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
+           int alpha, int beta, int depth)
 {
     ss->pv.clear();
     if (depth <= 0)
-        return qsearch(pos, ss, alpha, beta);
+        return qsearch(pos, ss, sg, alpha, beta);
 
     ++controller.nodes_searched;
 
@@ -309,7 +319,7 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
             ss[1].forward_pruning = false;
             Position child = pos;
             child.make_null_move();
-            int val = -search<false>(child, ss + 1, -beta, -beta + 1, depth_left);
+            int val = -search<false>(child, ss + 1, sg, -beta, -beta + 1, depth_left);
             ss[1].forward_pruning = true;
 
             // Check if time is left
@@ -336,7 +346,7 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
         pos.generate_movelist(mlist);
 
     // Reorder the moves
-    reorder_moves(pos, ss, tt_move);
+    reorder_moves(pos, ss, sg, tt_move);
 
     // In-check extension
     if (in_check)
@@ -365,13 +375,13 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
         int value;
         if (legal_moves == 1)
         {
-            value = -search<pv_node>(child_pos, ss + 1, -beta , -alpha, depth_left);
+            value = -search<pv_node>(child_pos, ss + 1, sg, -beta , -alpha, depth_left);
         }
         else
         {
-            value = -search<false>(child_pos, ss + 1, -alpha - 1, -alpha, depth_left);
+            value = -search<false>(child_pos, ss + 1, sg, -alpha - 1, -alpha, depth_left);
             if (value > alpha)
-                value = -search<pv_node>(child_pos, ss + 1, -beta , -alpha, depth_left);
+                value = -search<pv_node>(child_pos, ss + 1, sg, -beta , -alpha, depth_left);
         }
 
         // Check if time is left
@@ -401,11 +411,11 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
                 {
                     int pt = pos.piece_on(from_sq(move));
                     int to = to_sq(move);
-                    history[pt][to] += depth * depth;
+                    sg.history[pt][to] += depth * depth;
 
                     // Reduce history if it overflows
-                    if (history[pt][to] > HISTORY_LIMIT)
-                        reduce_history();
+                    if (sg.history[pt][to] > HISTORY_LIMIT)
+                        sg.reduce_history();
                 }
 
                 if (value >= beta)
@@ -441,18 +451,18 @@ int search(Position& pos, SearchStack* const ss, int alpha, int beta, int depth)
 
 Move Position::best_move()
 {
+    SearchGlobals sg;
     SearchStack search_stack[MAX_PLY];
     SearchStack* ss = search_stack;
 
     for (int ply = 0; ply < MAX_PLY; ++ply)
         search_stack[ply].ply = ply;
 
-    reduce_history(true);
     controller.nodes_searched = 0;
 
     Move best_move;
     for (int depth = 1; depth < MAX_PLY; ++depth) {
-        int score = search<true>(*this, ss, -INFINITY, +INFINITY, depth);
+        int score = search<true>(*this, ss, sg, -INFINITY, +INFINITY, depth);
 
         if (depth > 1 && stopped())
             break;
