@@ -103,10 +103,12 @@ inline int value_from_tt(int value, int ply)
 inline bool stopped()
 {
     return controller.stop_search
-        || (controller.time_dependent && utils::curr_time() >= controller.end_time);
+        || (   controller.time_dependent
+            && utils::curr_time() >= controller.end_time);
 }
 
-void reorder_moves(const Position& pos, SearchStack* ss, SearchGlobals& sg, Move tt_move=0)
+void reorder_moves(const Position& pos, SearchStack* ss, SearchGlobals& sg,
+        Move tt_move=0)
 {
     std::vector<Move>& mlist = ss->mlist;
     std::vector<int>& orderlist = ss->orderlist;
@@ -312,6 +314,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
         && !in_check
         && ss->forward_pruning)
     {
+        // Null move pruning (NMP)
         if (depth >= 4 && pos.evaluate() >= beta - 100)
         {
             int reduction = 4;
@@ -319,7 +322,8 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
             ss[1].forward_pruning = false;
             Position child = pos;
             child.make_null_move();
-            int val = -search<false>(child, ss + 1, sg, -beta, -beta + 1, depth_left);
+            int val = -search<false>(child, ss + 1, sg, -beta, -beta + 1,
+                    depth_left);
             ss[1].forward_pruning = true;
 
             // Check if time is left
@@ -367,21 +371,47 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
 
         // Print move being searched at root
         if (!ss->ply)
-            uci::print_currmove(move, legal_moves, controller.start_time, pos.is_flipped());
+            uci::print_currmove(move, legal_moves, controller.start_time,
+                    pos.is_flipped());
 
         int depth_left = depth - 1;
+
+        // Heuristic pruning and reductions
+        if (   ss->ply
+            && best_value > -MAX_MATE_VALUE
+            && legal_moves > 1
+            && num_non_pawns
+            && !prom_type(move)
+            && !cap_type(move)
+            && !child_pos.checkers_to(US))
+        {
+            // Late move reduction (LMR)
+            if (   depth > 2
+                && legal_moves > (pv_node ? 5 : 3)
+                && move != ss->killer_move[0]
+                && move != ss->killer_move[1]
+                && !in_check
+                && !pos.is_passed_pawn(from_sq(move)))
+            {
+                depth_left -= 1 + !pv_node + (legal_moves > 10);
+                depth_left = std::max(1, depth_left);
+            }
+        }
 
         // Principal Variation Search (PVS)
         int value;
         if (legal_moves == 1)
         {
-            value = -search<pv_node>(child_pos, ss + 1, sg, -beta , -alpha, depth_left);
+            value = -search<pv_node>(child_pos, ss + 1, sg, -beta , -alpha,
+                    depth_left);
         }
         else
         {
-            value = -search<false>(child_pos, ss + 1, sg, -alpha - 1, -alpha, depth_left);
+            value = -search<false>(child_pos, ss + 1, sg, -alpha - 1, -alpha,
+                    depth_left);
             if (value > alpha)
-                value = -search<pv_node>(child_pos, ss + 1, sg, -beta , -alpha, depth_left);
+                value = -search<pv_node>(child_pos, ss + 1, sg, -beta , -alpha,
+                        std::max(depth_left, depth - 1));
         }
 
         // Check if time is left

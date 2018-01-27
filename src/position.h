@@ -50,6 +50,7 @@ public:
     bool is_flipped() const;
     bool is_kingside(int sq, int c) const;
     bool is_queenside(int sq, int c) const;
+    bool is_passed_pawn(int sq) const;
     int get_ep_sq() const;
     u64 occupancy_bb() const;
     u64 piece_bb(int pt) const;

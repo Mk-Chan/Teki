@@ -305,6 +305,13 @@ u64 Position::pinned(int side) const
     return pinned;
 }
 
+bool Position::is_passed_pawn(int sq) const
+{
+    return this->piece_on(sq) == PAWN
+        && !(lookups::passed_pawn_mask(sq) & this->piece_bb(PAWN, THEM))
+        && !(lookups::north(sq) & this->piece_bb(PAWN, US));
+}
+
 u64 Position::perft(int depth, bool root) const
 {
     if (depth == 0)
