@@ -47,7 +47,7 @@ Move get_parsed_move(Position& pos, std::string& move_str)
 std::string get_pv_string(std::vector<Move>& pv, bool flipped)
 {
     std::string pv_string = "";
-    for (int i = 0; i < pv.size(); ++i, flipped = !flipped) {
+    for (unsigned i = 0; i < pv.size(); ++i, flipped = !flipped) {
         pv_string += get_move_string(pv[i], flipped);
         if (i != pv.size() - 1)
             pv_string += " ";

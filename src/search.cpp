@@ -115,7 +115,7 @@ void reorder_moves(const Position& pos, SearchStack* ss, SearchGlobals& sg,
     orderlist.clear();
 
     // Fill order vector
-    for (int i = 0; i < mlist.size(); ++i) {
+    for (unsigned i = 0; i < mlist.size(); ++i) {
         int order = 0;
         Move move = mlist[i];
         if (move == tt_move)
@@ -185,9 +185,6 @@ push_order:
     }
 
     assert(mlist.size() == orderlist.size());
-
-    for (int i = 1; i < orderlist.size(); ++i)
-        assert(orderlist[i-1] >= orderlist[i]);
 }
 
 int qsearch(Position& pos, SearchStack* const ss, SearchGlobals& sg,

@@ -77,11 +77,11 @@ struct TranspositionTable
     const TTEntry probe(std::uint64_t key) const;
     void write(TTEntry entry);
     void clear();
-    const int hash(std::uint64_t key) const;
+    int hash(std::uint64_t key) const;
 
 private:
     TTEntry* table;
-    std::uint32_t size;
+    int size;
 };
 
 inline TranspositionTable::TranspositionTable()
@@ -118,7 +118,7 @@ inline void TranspositionTable::clear()
         table[i].clear();
 }
 
-inline const int TranspositionTable::hash(std::uint64_t key) const
+inline int TranspositionTable::hash(std::uint64_t key) const
 {
     return key % size;
 }

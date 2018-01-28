@@ -175,8 +175,7 @@ void Position::init(std::stringstream& stream)
 
     // Castling
     stream >> part;
-    for (int i = 0; i < part.length(); ++i) {
-        char c = part[i];
+    for (char c : part) {
         if (c == '-')
         {
             break;
