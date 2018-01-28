@@ -23,15 +23,11 @@
 
 #include "tt.h"
 #include "uci.h"
+#include "options.h"
 #include "position.h"
 #include "controller.h"
 
 #define INITIAL_POSITION ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-
-enum Options
-{
-    HASH
-};
 
 TranspositionTable tt;
 Controller controller;
@@ -65,6 +61,13 @@ namespace handler
     {
         std::cout << "id name " << NAME << '\n'
                   << "id author " << AUTHOR << std::endl;
+        for (auto& [name, option] : options::spins) {
+            std::cout << "option name " << name << " type spin"
+                      << " default " << option.value
+                      << " min " << option.min
+                      << " max " << option.max
+                      << std::endl;
+        }
         std::cout << "uciok" << std::endl;
     }
 
@@ -106,23 +109,22 @@ namespace handler
     {
         std::string word;
         stream >> word;
-        if (word != "name") return;
-
-        int option = -1;
-        stream >> word;
-        if (word == "Hash") option = HASH;
-
-        stream >> word;
-        if (word != "value") return;
-
-        int value;
-        switch (option) {
-        case HASH:
-            stream >> value;
-            tt.resize(value);
-            break;
-        default:
+        if (word != "name")
             return;
+
+        stream >> word;
+        if (options::spins.find(word) != options::spins.end())
+        {
+            std::string name = word;
+
+            stream >> word;
+            if (word != "value")
+                return;
+
+            int value;
+            stream >> value;
+
+            options::spins[name].setoption(value);
         }
     }
 
