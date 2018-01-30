@@ -18,8 +18,10 @@
 
 #include <iostream>
 #include <string>
+
 #include "uci.h"
 #include "lookups.h"
+#include "evaluate.h"
 
 int main()
 {

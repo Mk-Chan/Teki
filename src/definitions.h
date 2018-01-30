@@ -21,6 +21,7 @@
 
 #undef INFINITY
 
+#include <utility>
 #include <cassert>
 #include <cinttypes>
 
@@ -102,10 +103,5 @@ inline u64 BB(int shift) { return u64(1) << shift; }
 inline u64 sBB(int shift) { return shift < 64 ? u64(1) << shift : 0; }
 
 extern void print_bb(u64 bb);
-
-namespace eval
-{
-    extern void init();
-}
 
 #endif

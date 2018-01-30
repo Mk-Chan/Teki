@@ -54,12 +54,9 @@ namespace lookups
     extern u64 full_ray(int from, int to);
     extern u64 intervening_sqs(int from, int to);
     extern u64 adjacent_files(int square);
+    extern u64 adjacent_sqs(int square);
     extern u64 file_mask(int square);
     extern u64 rank_mask(int square);
-
-
-    extern u64 passed_pawn_mask(int square);
-    extern u64 king_danger_zone(int square);
 
     extern u64 north(int square);
     extern u64 south(int square);
@@ -80,6 +77,10 @@ namespace lookups
     extern u64 queen(int square, u64 occupancy);
     extern u64 king(int square);
     extern u64 attacks(int piece_type, int square, u64 occupancy, int side=US);
+
+    extern u64 passed_pawn_mask(int square);
+    extern u64 king_danger_zone(int square);
+    extern std::pair<u64, u64> king_shelter_masks(int square);
 }
 
 #endif

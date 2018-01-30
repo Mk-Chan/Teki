@@ -32,11 +32,9 @@ u64 xray_bb[64][64];
 u64 full_ray_bb[64][64];
 u64 intervening_ray_bb[64][64];
 u64 adjacent_files_bb[64];
+u64 adjacent_sqs_bb[64];
 u64 file_mask_bb[64];
 u64 rank_mask_bb[64];
-
-u64 passed_pawn_mask_bb[64];
-u64 king_danger_zone_bb[64];
 
 u64 pawn_attacks[2][64];
 u64 knight_attacks[64];
@@ -53,6 +51,10 @@ u64 northeast_bb[64];
 u64 northwest_bb[64];
 u64 southeast_bb[64];
 u64 southwest_bb[64];
+
+u64 passed_pawn_mask_bb[64];
+u64 king_danger_zone_bb[64];
+u64 king_shelter_mask_bb[64][2];
 
 void print_bb(u64 bb)
 {
@@ -126,11 +128,13 @@ void init_misc()
         {
             passed_pawn_mask_bb[i] |= north_bb[i-1] | north_bb[i];
             adjacent_files_bb[i] |= BB(i-1) | north_bb[i-1] | south_bb[i-1];
+            adjacent_sqs_bb[i] |= BB(i-1);
         }
         if (file_of(i) != FILE_H)
         {
             passed_pawn_mask_bb[i] |= north_bb[i+1] | north_bb[i];
             adjacent_files_bb[i] |= BB(i+1) | north_bb[i+1] | south_bb[i+1];
+            adjacent_sqs_bb[i] |= BB(i+1);
         }
         for (j = 0; j < 64; j++) {
             distance_val[i][j] = std::max(abs(int(rank_of(i)) - int(rank_of(j))),
@@ -272,6 +276,8 @@ void init_eval_masks()
 {
     for (int i = 0; i < 64; ++i) {
         king_danger_zone_bb[i] = BB(i) | lookups::king(i) | (lookups::king(i) >> 8);
+        king_shelter_mask_bb[i][0] = (BB(i) << 8) | (lookups::king(i) & (lookups::king(i+8) << 8));
+        king_shelter_mask_bb[i][1] = king_shelter_mask_bb[i][0] << 8;
     }
 }
 
@@ -298,11 +304,9 @@ namespace lookups
     u64 full_ray(int from, int to) { return full_ray_bb[from][to]; }
     u64 intervening_sqs(int from, int to) { return intervening_ray_bb[from][to]; }
     u64 adjacent_files(int sq) { return adjacent_files_bb[sq]; }
+    u64 adjacent_sqs(int sq) { return adjacent_sqs_bb[sq]; }
     u64 file_mask(int sq) { return file_mask_bb[sq]; }
     u64 rank_mask(int sq) { return rank_mask_bb[sq]; }
-
-    u64 passed_pawn_mask(int square) { return passed_pawn_mask_bb[square]; }
-    u64 king_danger_zone(int square) { return king_danger_zone_bb[square]; }
 
     u64 north(int square) { return north_bb[square]; }
     u64 south(int square) { return south_bb[square]; }
@@ -387,5 +391,15 @@ namespace lookups
         case KING: return king(square);
         default: return -1;
         }
+    }
+
+    u64 passed_pawn_mask(int square) { return passed_pawn_mask_bb[square]; }
+    u64 king_danger_zone(int square) { return king_danger_zone_bb[square]; }
+    std::pair<u64, u64> king_shelter_masks(int square)
+    {
+        return {
+            king_shelter_mask_bb[square][0],
+            king_shelter_mask_bb[square][1]
+        };
     }
 }

@@ -135,6 +135,6 @@ inline void TranspositionTable::write(const TTEntry entry)
     table[index] = entry;
 }
 
-extern TranspositionTable tt;
+inline TranspositionTable tt;
 
 #endif

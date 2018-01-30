@@ -20,13 +20,6 @@
 #include "move.h"
 #include "lookups.h"
 
-namespace castling
-{
-    bool is_frc = false;
-    int rook_sqs[2];
-    u8 spoilers[64];
-}
-
 char piece_char(int pt, int c)
 {
     char pchar;

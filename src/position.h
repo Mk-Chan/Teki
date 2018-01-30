@@ -28,9 +28,9 @@
 
 namespace castling
 {
-    extern bool is_frc;
-    extern int rook_sqs[2];
-    extern u8 spoilers[64];
+    inline bool is_frc = false;
+    inline int rook_sqs[2];
+    inline u8 spoilers[64];
 }
 
 class Position
@@ -42,6 +42,7 @@ public:
 
     // Misc
     void display();
+    u64 perft(int depth, bool root=true) const;
 
     // Getters
     u64 get_hash_key() const;
@@ -68,12 +69,11 @@ public:
     void generate_in_check_movelist(std::vector<Move>& mlist) const;
     void generate_movelist(std::vector<Move>& mlist) const;
     void generate_quiesce_movelist(std::vector<Move>& mlist) const;
+    bool is_repetition() const;
+    bool legal_move(Move move) const;
 
     // Operations
     void flip();
-    bool is_repetition() const;
-    bool legal_move(Move move) const;
-    u64 perft(int depth, bool root=true) const;
     int evaluate();
     Move best_move();
     void make_move(Move move);
