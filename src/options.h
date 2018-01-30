@@ -23,6 +23,8 @@
 #include <functional>
 #include <unordered_map>
 
+#include "tt.h"
+
 struct SpinOption
 {
     SpinOption() {}
@@ -46,7 +48,9 @@ struct SpinOption
 
 namespace options
 {
-    extern std::unordered_map<std::string, SpinOption> spins;
+    inline std::unordered_map<std::string, SpinOption> spins = {
+        { "Hash", { 1, 1, 1048576, [](int s) { tt.resize(s); } } }
+    };
 }
 
 #endif
