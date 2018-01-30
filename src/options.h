@@ -44,7 +44,6 @@ struct SpinOption
     std::function<void(int)> handler;
 };
 
-
 namespace options
 {
     extern std::unordered_map<std::string, SpinOption> spins;

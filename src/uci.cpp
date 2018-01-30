@@ -155,6 +155,7 @@ namespace handler
         std::string word;
         controller.stop_search = false;
         controller.time_dependent = false;
+        controller.limited_search = false;
         controller.start_time = utils::curr_time();
         controller.end_time = controller.start_time;
         time_ms time_to_go = 1000;
@@ -204,6 +205,16 @@ namespace handler
                 stream >> binc;
                 if (pos.is_flipped())
                     increment = binc;
+            }
+            else if (word == "searchmoves")
+            {
+                controller.limited_search = true;
+                controller.search_moves.clear();
+                std::string move_str;
+                while (stream >> move_str) {
+                    Move move = get_parsed_move(pos, move_str);
+                    controller.search_moves.push_back(move);
+                }
             }
             else if (word == "movestogo")
             {

@@ -340,11 +340,20 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     std::vector<Move>& mlist = ss->mlist;
     mlist.clear();
 
-    // Populate the movelist
-    if (in_check)
-        pos.generate_in_check_movelist(mlist);
+    if (controller.limited_search && !ss->ply)
+    {
+        std::copy(controller.search_moves.begin(),
+                  controller.search_moves.end(),
+                  std::back_inserter(mlist));
+    }
     else
-        pos.generate_movelist(mlist);
+    {
+        // Populate the movelist
+        if (in_check)
+            pos.generate_in_check_movelist(mlist);
+        else
+            pos.generate_movelist(mlist);
+    }
 
     // Reorder the moves
     reorder_moves(pos, ss, sg, tt_move);

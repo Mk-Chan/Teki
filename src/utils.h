@@ -57,7 +57,7 @@ namespace utils
         return uni(rng);
     }
 
-    template<typename T>
+    template <typename T>
     inline void remove_from_vec(T& val, std::vector<T>& vec)
     {
         vec.erase(std::remove(vec.begin(), vec.end(), val), vec.end());
