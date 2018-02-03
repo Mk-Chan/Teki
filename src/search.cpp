@@ -315,6 +315,11 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
         && !in_check
         && ss->forward_pruning)
     {
+        // Reverse futility pruning
+        if (   depth < 3
+            && static_eval - 200 * depth >= beta)
+            return static_eval;
+
         // Null move pruning (NMP)
         if (depth >= 4 && static_eval >= beta - 100)
         {
