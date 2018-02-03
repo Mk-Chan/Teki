@@ -305,6 +305,10 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
                                & ~(pos.piece_bb(KING) ^ pos.piece_bb(PAWN)));
     bool in_check = pos.checkers_to(US);
 
+    int static_eval;
+    if (!pv_node)
+        static_eval = pos.evaluate();
+
     // Forward pruning
     if (   !pv_node
         && num_non_pawns
@@ -312,7 +316,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
         && ss->forward_pruning)
     {
         // Null move pruning (NMP)
-        if (depth >= 4 && pos.evaluate() >= beta - 100)
+        if (depth >= 4 && static_eval >= beta - 100)
         {
             int reduction = 4;
             int depth_left = std::max(1, depth - reduction);
@@ -391,6 +395,12 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
             && !cap_type(move)
             && !child_pos.checkers_to(US))
         {
+            // Futility pruning
+            if (   depth < 8
+                && !pv_node
+                && static_eval + 100 * depth_left <= alpha)
+                continue;
+
             // Late move reduction (LMR)
             if (   depth > 2
                 && legal_moves > (pv_node ? 5 : 3)
