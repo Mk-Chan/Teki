@@ -284,8 +284,8 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
 
     // Transposition table probe
     Move tt_move = 0;
-    const TTEntry& tt_entry = tt.probe(pos.get_hash_key());
-    if (tt_entry.get_key() == pos.get_hash_key())
+    if (TTEntry tt_entry = tt.probe(pos.get_hash_key());
+        tt_entry.get_key() == pos.get_hash_key())
     {
         tt_move = tt_entry.get_move();
         if (!pv_node && tt_entry.get_depth() >= depth)
@@ -302,7 +302,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     }
 
     int num_non_pawns = popcnt(pos.color_bb(US)
-                               & ~(pos.piece_bb(KING) ^ pos.piece_bb(PAWN)));
+            & ~(pos.piece_bb(KING) ^ pos.piece_bb(PAWN)));
     bool in_check = pos.checkers_to(US);
 
     int static_eval;
@@ -457,7 +457,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
                 }
 
                 // Update history
-                int quiet_move = !((move & CAPTURE_MASK) || (move & PROMOTION));
+                bool quiet_move = !((move & CAPTURE_MASK) || (move & PROMOTION));
                 if (quiet_move && depth <= MAX_HISTORY_DEPTH)
                 {
                     int pt = pos.piece_on(from_sq(move));
