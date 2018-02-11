@@ -123,7 +123,7 @@ void init_misc()
     for (i = 0; i < 64; i++) {
         file_mask_bb[i] = lookups::north(i) | lookups::south(i) | BB(i);
         rank_mask_bb[i] = lookups::east(i) | lookups::west(i) | BB(i);
-        passed_pawn_mask_bb[i] = passed_pawn_mask_bb[i] = 0;
+        passed_pawn_mask_bb[i] = 0;
         if (file_of(i) != FILE_A)
         {
             passed_pawn_mask_bb[i] |= north_bb[i-1] | north_bb[i];
@@ -275,9 +275,17 @@ void init_keys()
 void init_eval_masks()
 {
     for (int i = 0; i < 64; ++i) {
-        king_danger_zone_bb[i] = BB(i) | lookups::king(i) | (lookups::king(i) >> 8);
-        king_shelter_mask_bb[i][0] = (BB(i) << 8) | (lookups::king(i) & (lookups::king(i+8) << 8));
-        king_shelter_mask_bb[i][1] = king_shelter_mask_bb[i][0] << 8;
+        king_danger_zone_bb[i] =
+              BB(i)
+            | lookups::king(i)
+            | (lookups::king(i) >> 8);
+        if (i < 56)
+        {
+            king_shelter_mask_bb[i][0] = sBB(i + 8)
+                | (lookups::king(i) & (lookups::king(i+8) << 8));
+            if (i < 48)
+                king_shelter_mask_bb[i][1] = king_shelter_mask_bb[i][0] << 8;
+        }
     }
 }
 
