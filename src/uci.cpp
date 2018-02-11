@@ -132,7 +132,7 @@ namespace handler
         stream >> word;
         if (word == "startpos")
         {
-            std::stringstream stream = std::stringstream(INITIAL_POSITION);
+            std::stringstream stream {INITIAL_POSITION};
             pos.init(stream);
         }
         else if (word == "fen")
@@ -245,13 +245,13 @@ namespace handler
 void loop()
 {
     Position pos;
-    std::stringstream stream = std::stringstream(INITIAL_POSITION);
+    std::stringstream stream {INITIAL_POSITION};
     pos.init(stream);
     std::string line, word;
     while (true)
     {
         std::getline(std::cin, line);
-        std::stringstream stream(line);
+        std::stringstream stream {line};
 
         stream >> word;
         if (word == "d") handler::d(pos);
