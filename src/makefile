@@ -2,11 +2,11 @@ ENGINE_NAME = Teki
 UCI_NAME = "\"$(ENGINE_NAME)\""
 
 CXX = clang++
-CXXFLAGS = -std=c++17 -Wall -pipe $(EXTRACXXFLAGS) -DNAME=$(UCI_NAME)
+CXXFLAGS = -std=c++11 -Wall -pipe $(EXTRACXXFLAGS) -DNAME=$(UCI_NAME)
 LDFLAGS = -pthread -Wl,--no-as-needed $(CXXFLAGS) $(EXTRALDFLAGS)
 
 OBJS = main.o uci.o lookups.o position.o movegen.o move.o search.o\
-       evaluate.o
+       evaluate.o options.o globals.o
 
 BINDIR = /usr/local/bin
 

@@ -28,9 +28,9 @@
 
 namespace castling
 {
-    inline bool is_frc = false;
-    inline int rook_sqs[2];
-    inline u8 spoilers[64];
+    extern bool is_frc;
+    extern int rook_sqs[2];
+    extern u8 spoilers[64];
 }
 
 class Position

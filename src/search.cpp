@@ -284,8 +284,8 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
 
     // Transposition table probe
     Move tt_move = 0;
-    if (TTEntry tt_entry = tt.probe(pos.get_hash_key());
-        tt_entry.get_key() == pos.get_hash_key())
+    TTEntry tt_entry = tt.probe(pos.get_hash_key());
+    if (tt_entry.get_key() == pos.get_hash_key())
     {
         tt_move = tt_entry.get_move();
         if (!pv_node && tt_entry.get_depth() >= depth)

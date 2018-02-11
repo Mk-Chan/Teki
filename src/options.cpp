@@ -16,33 +16,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef EVALUATE_H
-#define EVALUATE_H
+#include "tt.h"
+#include "options.h"
 
-#include "score.h"
-
-extern Score piece_value[5];
-extern Score psqt[6][64];
-extern Score psq_tmp[6][64];
-
-namespace eval
+namespace options
 {
-    inline void init()
-    {
-        int k = 0;
-        for (int i = 0; i < 8; ++i) {
-            for (int j = 0;  j < 4; ++j) {
-                int sq1 = get_sq(i, j);
-                int sq2 = get_sq(i, (7 - j));
-                for (int pt = PAWN; pt <= KING; ++pt) {
-                    psqt[pt][sq1]
-                        = psqt[pt][sq2]
-                        = psq_tmp[pt][k];
-                }
-                ++k;
-            }
-        }
-    }
+    std::unordered_map<std::string, SpinOption> spins = {
+        { "Hash", { 1, 1, 1048576, [](int s) { tt.resize(s); } } }
+    };
 }
-
-#endif

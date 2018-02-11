@@ -32,6 +32,6 @@ struct Controller
     std::vector<uint32_t> search_moves;
 };
 
-inline Controller controller;
+extern Controller controller;
 
 #endif

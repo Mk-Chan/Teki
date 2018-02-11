@@ -58,8 +58,9 @@ namespace handler
     {
         std::cout << "id name " << NAME << '\n'
                   << "id author " << AUTHOR << std::endl;
-        for (auto& [name, option] : options::spins) {
-            std::cout << "option name " << name << " type spin"
+        for (auto& name_option : options::spins) {
+            SpinOption& option = name_option.second;
+            std::cout << "option name " << name_option.first << " type spin"
                       << " default " << option.value
                       << " min " << option.min
                       << " max " << option.max
