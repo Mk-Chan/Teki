@@ -374,7 +374,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     int old_alpha = alpha;
     int best_value = -INFINITY,
         legal_moves = 0;
-    Move best_move;
+    Move best_move = 0;
     for (Move move : mlist) {
         // Check for legality and make move
         if (!pos.legal_move(move))
