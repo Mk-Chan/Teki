@@ -9,6 +9,7 @@ teki
 
 # Folders
 exes
+build
 
 # Misc. files
 .ycm_extra_conf.py
