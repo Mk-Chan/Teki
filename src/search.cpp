@@ -502,6 +502,8 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
 
 Move Position::best_move()
 {
+    constexpr int asp_delta[] = { 10, 30, 50, 100, 200, 300, INFINITY };
+
     SearchGlobals sg;
     SearchStack search_stack[MAX_PLY];
     SearchStack* ss = search_stack;
@@ -512,8 +514,38 @@ Move Position::best_move()
     controller.nodes_searched = 0;
 
     Move best_move;
+    int alpha = -INFINITY;
+    int beta = +INFINITY;
+    int adelta;
+    int bdelta;
+    bool failed;
+    int score = 0;
     for (int depth = 1; depth < MAX_PLY; ++depth) {
-        int score = search<true>(*this, ss, sg, -INFINITY, +INFINITY, depth);
+        adelta = bdelta = 0;
+        do {
+            failed = false;
+            score = search<true>(*this, ss, sg, alpha, beta, depth);
+
+            if (stopped())
+                break;
+
+            // Failed low, decrease alpha and repeat
+            if (score <= alpha)
+            {
+                alpha = std::max(score - asp_delta[adelta], -INFINITY);
+                ++adelta;
+                failed = true;
+            }
+
+            // Failed high, increase beta and repeat
+            else if (score >= beta)
+            {
+                beta = std::min(score + asp_delta[bdelta], +INFINITY);
+                ++bdelta;
+                failed = true;
+            }
+        }
+        while (failed);
 
         if (depth > 1 && stopped())
             break;
@@ -522,6 +554,13 @@ Move Position::best_move()
         uci::print_search(score, depth, time_passed, ss->pv, is_flipped());
 
         best_move = ss->pv[0];
+
+        // Prepare aspiration window for next time
+        if (depth > 4)
+        {
+            alpha = score - 10;
+            beta = score + 10;
+        }
     }
 
     return best_move;
