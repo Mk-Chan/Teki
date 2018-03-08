@@ -29,6 +29,8 @@
 
 #define INITIAL_POSITION ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
+volatile bool searching = false;
+
 Move get_parsed_move(Position& pos, std::string& move_str)
 {
     std::vector<Move> mlist;
@@ -228,17 +230,24 @@ namespace handler
                 controller.end_time -= 50;
         }
 
-        std::thread search_thread([&pos]() {
-            Move move = pos.best_move();
-            std::cout << "bestmove " << get_move_string(move, pos.is_flipped())
-                      << std::endl;
-        });
-        search_thread.detach();
+        if (!searching)
+        {
+            searching = true;
+            std::thread search_thread([&pos]() {
+                Move move = pos.best_move();
+                std::cout << "bestmove " << get_move_string(move, pos.is_flipped())
+                        << std::endl;
+                searching = false;
+            });
+            search_thread.detach();
+        }
     }
 
     void stop()
     {
         controller.stop_search = true;
+        while (searching)
+            continue;
     }
 }
 
@@ -264,7 +273,7 @@ void loop()
         else if (word == "stop") handler::stop();
         else if (word == "quit") break;
     }
-    controller.stop_search = true;
+    handler::stop();
 }
 
 namespace uci

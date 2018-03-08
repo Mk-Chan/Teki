@@ -4,12 +4,10 @@
 # Executables
 teki
 
-# Scripts
-*.sh
-
 # Folders
 exes
 build
+release
 
 # Misc. files
 .ycm_extra_conf.py
