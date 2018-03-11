@@ -79,8 +79,8 @@ for CXX in ${COMPILERS[@]}; do
         ..
     make -j$CORES
     cd ..
-    mv build/teki release/teki_$EXT
-    strip -s release/teki_$EXT
+    mv build/teki release/Teki$1_$EXT
+    strip -s release/Teki$1_$EXT
     rm -rf build
 
     i=$((i+1))
