@@ -4,10 +4,15 @@ if [[ $0 != "./build.sh" ]]; then
     exit 1
 fi
 
-if [ $# -lt 2 ]; then
-    set `grep -c ^processor /proc/cpuinfo`
+if [ $# -lt 1 ]; then
+    echo "Enter version name/number"
+    exit 1
 fi
-echo "Using $1 cores"
+
+echo "Version name/number: $1"
+
+CORES=`grep -c ^processor /proc/cpuinfo`
+echo "Using $CORES cores"
 
 # Clear build space
 rm -rf build
@@ -70,8 +75,9 @@ for CXX in ${COMPILERS[@]}; do
         -DCMAKE_CXX_COMPILER=$CXX \
         -DEXTRA_CXX_FLAGS=$ARCH \
         -DEXTRA_LINK_FLAGS="-static" \
+        -DEXEC_NAME="\"Teki $1\"" \
         ..
-    make -j$1
+    make -j$CORES
     cd ..
     mv build/teki release/teki_$EXT
     strip -s release/teki_$EXT

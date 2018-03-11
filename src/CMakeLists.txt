@@ -4,7 +4,6 @@ set(CMAKE_SYSTEM_NAME Generic)
 
 project(teki CXX)
 
-set(EXEC_NAME "teki")
 set(UCI_NAME "\\\"${EXEC_NAME}\\\"")
 
 set(CMAKE_CXX_STANDARD 11)
