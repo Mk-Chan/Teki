@@ -71,6 +71,7 @@ struct SearchGlobals
     SearchGlobals()
     {
         reduce_history(true);
+        nodes_searched = 0;
     }
 
     inline void reduce_history(bool to_zero=false)
@@ -85,6 +86,7 @@ struct SearchGlobals
         }
     }
 
+    u64 nodes_searched;
     int history[6][64];
 };
 
@@ -196,12 +198,12 @@ push_order:
 int qsearch(Position& pos, SearchStack* const ss, SearchGlobals& sg,
             int alpha, int beta)
 {
-    ++controller.nodes_searched;
+    ++sg.nodes_searched;
 
     if (pos.get_half_moves() > 99 || pos.is_repetition())
         return 0;
 
-    if (!(controller.nodes_searched & 2047) && stopped())
+    if (!(sg.nodes_searched & 2047) && stopped())
         return 0;
 
     if (ss->ply >= MAX_PLY)
@@ -242,7 +244,7 @@ int qsearch(Position& pos, SearchStack* const ss, SearchGlobals& sg,
 
         int value = -qsearch(child_pos, ss + 1, sg, -beta, -alpha);
 
-        if (!(controller.nodes_searched & 2047) && stopped())
+        if (!(sg.nodes_searched & 2047) && stopped())
             return 0;
 
         if (value > alpha)
@@ -267,7 +269,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     if (depth <= 0)
         return qsearch(pos, ss, sg, alpha, beta);
 
-    ++controller.nodes_searched;
+    ++sg.nodes_searched;
 
     if (ss->ply)
     {
@@ -285,7 +287,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     }
 
     // Check if time is left
-    if (!(controller.nodes_searched & 2047) && stopped())
+    if (!(sg.nodes_searched & 2047) && stopped())
         return 0;
 
     // Transposition table probe
@@ -339,7 +341,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
             ss[1].forward_pruning = true;
 
             // Check if time is left
-            if (!(controller.nodes_searched & 2047) && stopped())
+            if (!(sg.nodes_searched & 2047) && stopped())
                 return 0;
 
             if (val >= beta)
@@ -442,7 +444,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
         }
 
         // Check if time is left
-        if (!(controller.nodes_searched & 2047) && stopped())
+        if (!(sg.nodes_searched & 2047) && stopped())
             return 0;
 
         if (value > best_value)
@@ -555,6 +557,8 @@ Move Position::best_move()
 
         if (depth > 1 && stopped())
             break;
+
+        controller.nodes_searched = sg.nodes_searched;
 
         time_ms time_passed = utils::curr_time() - controller.start_time;
         uci::print_search(score, depth, time_passed, ss->pv, is_flipped());
