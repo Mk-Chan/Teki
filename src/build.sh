@@ -44,7 +44,10 @@ COMPILERS=($CXX $CXX)
 EXTS=("linux32" "linux64")
 
 # Set Windows 32-bit C++ compiler
-WIN_CXX_32=i686-w64-mingw32-g++
+if [[ -z $WIN_CXX_32 ]]; then
+    WIN_CXX_32=i686-w64-mingw32-g++
+    echo "Defaulting to $WIN_CXX_32"
+fi
 if [ -x "$(command -v $WIN_CXX_32)" ]; then
     COMPILERS+=($WIN_CXX_32)
     EXTS+=("win32.exe")
@@ -53,7 +56,10 @@ if [ -x "$(command -v $WIN_CXX_32)" ]; then
 fi
 
 # Set Windows 64-bit C++ compiler
-WIN_CXX_64=x86_64-w64-mingw32-g++
+if [[ -z $WIN_CXX_64 ]]; then
+    WIN_CXX_64=x86_64-w64-mingw32-g++
+    echo "Defaulting to $WIN_CXX_64"
+fi
 if [ -x "$(command -v $WIN_CXX_64)" ]; then
     COMPILERS+=($WIN_CXX_64)
     EXTS+=("win64.exe")
