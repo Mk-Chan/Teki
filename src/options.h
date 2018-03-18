@@ -40,7 +40,8 @@ struct SpinOption
         if (value >= min && value <= max)
         {
             this->value = value;
-            handler(value);
+            if (handler)
+                handler(value);
         }
     }
 

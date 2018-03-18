@@ -24,10 +24,12 @@ SOFTWARE.
 
 #include "tt.h"
 #include "options.h"
+#include "definitions.h"
 
 namespace options
 {
     std::unordered_map<std::string, SpinOption> spins = {
-        { "Hash", { 1, 1, 1048576, [](int s) { tt.resize(s); } } }
+        { "Hash", { 1, 1, 1048576, [](int s) { tt.resize(s); } } },
+        { "Threads", { 1, 1, MAX_THREADS, nullptr } }
     };
 }

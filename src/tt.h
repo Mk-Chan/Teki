@@ -65,9 +65,9 @@ inline TTEntry::TTEntry(std::uint64_t move, std::uint64_t flag, std::uint64_t de
                         std::uint64_t score, std::uint64_t key)
 {
     data = move | (flag << FLAG_SHIFT) | (depth << DEPTH_SHIFT) | (score << SCORE_SHIFT);
-    this->key = key;
+    this->key = key ^ data;
 }
-inline std::uint64_t TTEntry::get_key() const { return key; }
+inline std::uint64_t TTEntry::get_key() const { return key ^ data; }
 inline std::uint32_t TTEntry::get_move() const { return std::uint32_t(data & MOVE_MASK); }
 inline int TTEntry::get_flag() const { return (data >> FLAG_SHIFT) & FLAG_MASK; }
 inline int TTEntry::get_depth() const { return (data >> DEPTH_SHIFT) & DEPTH_MASK; }

@@ -22,16 +22,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include <random>
-#include <algorithm>
+#include <thread>
 
 #include "controller.h"
 #include "evaluate.h"
 #include "position.h"
+#include "options.h"
 #include "move.h"
 #include "utils.h"
 #include "uci.h"
 #include "tt.h"
+
+namespace thread
+{
+    volatile bool stop;
+};
 
 constexpr int MAX_HISTORY_DEPTH = 12;
 constexpr int HISTORY_LIMIT = 8000;
@@ -90,6 +95,11 @@ struct SearchGlobals
     int history[6][64];
 };
 
+SearchStack stacks[MAX_THREADS][MAX_PLY];
+SearchGlobals globals[MAX_THREADS];
+std::thread threads[MAX_THREADS];
+std::pair<int, bool> results[MAX_THREADS];
+
 inline int value_to_tt(int value, int ply)
 {
     if (value >= MAX_MATE_VALUE)
@@ -110,9 +120,19 @@ inline int value_from_tt(int value, int ply)
 
 inline bool stopped()
 {
-    return controller.stop_search
-        || (   controller.time_dependent
-            && utils::curr_time() >= controller.end_time);
+    if (controller.stop_search)
+        return true;
+
+    if (controller.time_dependent)
+    {
+        time_ms curr_time = utils::curr_time();
+        if (curr_time >= controller.end_time)
+            return true;
+        if (controller.end_time - curr_time <= 10)
+            return true;
+    }
+
+    return false;
 }
 
 void reorder_moves(const Position& pos, SearchStack* ss, SearchGlobals& sg,
@@ -203,7 +223,7 @@ int qsearch(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     if (pos.get_half_moves() > 99 || pos.is_repetition())
         return 0;
 
-    if (!(sg.nodes_searched & 2047) && stopped())
+    if (!(sg.nodes_searched & 2047) && (stopped() || thread::stop))
         return 0;
 
     if (ss->ply >= MAX_PLY)
@@ -244,7 +264,7 @@ int qsearch(Position& pos, SearchStack* const ss, SearchGlobals& sg,
 
         int value = -qsearch(child_pos, ss + 1, sg, -beta, -alpha);
 
-        if (!(sg.nodes_searched & 2047) && stopped())
+        if (!(sg.nodes_searched & 2047) && (stopped() || thread::stop))
             return 0;
 
         if (value > alpha)
@@ -261,7 +281,7 @@ int qsearch(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     return alpha;
 }
 
-template <bool pv_node>
+template <bool pv_node, bool main_thread=false>
 int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
            int alpha, int beta, int depth)
 {
@@ -287,7 +307,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     }
 
     // Check if time is left
-    if (!(sg.nodes_searched & 2047) && stopped())
+    if (!(sg.nodes_searched & 2047) && (stopped() || thread::stop))
         return 0;
 
     // Transposition table probe
@@ -341,7 +361,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
             ss[1].forward_pruning = true;
 
             // Check if time is left
-            if (!(sg.nodes_searched & 2047) && stopped())
+            if (!(sg.nodes_searched & 2047) && (stopped() || thread::stop))
                 return 0;
 
             if (val >= beta)
@@ -393,9 +413,14 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
         ++legal_moves;
 
         // Print move being searched at root
-        if (!ss->ply)
+        if (main_thread && !ss->ply)
+        {
+            controller.nodes_searched = 0;
+            for (int i = 0; i < options::spins["Threads"].value; ++i)
+                controller.nodes_searched += globals[i].nodes_searched;
             uci::print_currmove(move, legal_moves, controller.start_time,
                     pos.is_flipped());
+        }
 
         int depth_left = depth - 1;
 
@@ -444,7 +469,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
         }
 
         // Check if time is left
-        if (!(sg.nodes_searched & 2047) && stopped())
+        if (!(sg.nodes_searched & 2047) && (stopped() || thread::stop))
             return 0;
 
         if (value > best_value)
@@ -508,18 +533,45 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     return best_value;
 }
 
+void parallel_search(Position pos, int alpha, int beta, int depth, int threadnum)
+{
+    auto& res = results[threadnum];
+    auto& sg = globals[threadnum];
+    SearchStack* ss = stacks[threadnum];
+    res.second = false; // Mark as invalid result
+
+    // Start parallel search
+    res.first = search<true>(pos, ss, sg, alpha, beta, depth);
+
+    // If this thread finished searching before the others, then thread::stop
+    // will not be set. Therefore set it to stop all others and mark this
+    // result as a valid result
+    if (!thread::stop)
+    {
+        thread::stop = true;
+        res.second = true;
+    }
+}
+
 Move Position::best_move()
 {
     constexpr int asp_delta[] = { 10, 30, 50, 100, 200, 300, INFINITY };
 
-    SearchGlobals sg;
-    SearchStack search_stack[MAX_PLY];
-    SearchStack* ss = search_stack;
+    int num_threads = options::spins["Threads"].value;
 
-    for (int ply = 0; ply < MAX_PLY; ++ply)
-        search_stack[ply].ply = ply;
+    for (int i = 0; i < num_threads; ++i) {
+        // Reset stacks
+        for (int ply = 0; ply < MAX_PLY; ++ply)
+            stacks[i][ply].ply = ply;
 
-    controller.nodes_searched = 0;
+        // Reset results
+        results[i].first = 0;
+        results[i].second = false;
+
+        // Reset globals
+        globals[i].reduce_history(true);
+        globals[i].nodes_searched = 0;
+    }
 
     Move best_move;
     int alpha = -INFINITY;
@@ -527,12 +579,53 @@ Move Position::best_move()
     int adelta;
     int bdelta;
     bool failed;
+    int result_index;
     int score = 0;
     for (int depth = 1; depth < MAX_PLY; ++depth) {
         adelta = bdelta = 0;
         do {
             failed = false;
-            score = search<true>(*this, ss, sg, alpha, beta, depth);
+            thread::stop = false;
+            result_index = 0; // Assume main thread has completed search
+
+            // Perform multithreaded search
+            if (depth > 4)
+            {
+                // Start helper threads
+                for (int i = 1; i < num_threads; ++i) {
+                    threads[i] = std::thread {parallel_search, *this, alpha,
+                                              beta, depth, i};
+                }
+
+                // Start main thread
+                results[0].first = search<true, true>(
+                    *this, stacks[0], globals[0], alpha, beta, depth
+                );
+
+                // Stop all threads
+                thread::stop = true;
+
+                // If no other thread has completed searching, main result will
+                // be used since we started by assuming the main has completed.
+                // Otherwise, join all threads and use the result of the one
+                // with the completed search.
+                for (int i = 1; i < num_threads; ++i) {
+                    threads[i].join();
+                    // If this thread has completed search, use it
+                    if (results[i].second)
+                        result_index = i;
+                }
+            }
+            // Perform single threaded search
+            else
+            {
+                results[0].first = search<true>(
+                    *this, stacks[0], globals[0], alpha, beta, depth
+                );
+            }
+
+            // Get the completed search result
+            score = results[result_index].first;
 
             if (stopped())
                 break;
@@ -558,7 +651,11 @@ Move Position::best_move()
         if (depth > 1 && stopped())
             break;
 
-        controller.nodes_searched = sg.nodes_searched;
+        controller.nodes_searched = 0;
+        for (int i = 0; i < num_threads; ++i)
+            controller.nodes_searched += globals[i].nodes_searched;
+
+        SearchStack* ss = stacks[result_index];
 
         time_ms time_passed = utils::curr_time() - controller.start_time;
         uci::print_search(score, depth, time_passed, ss->pv, is_flipped());

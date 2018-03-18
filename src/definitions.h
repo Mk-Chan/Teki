@@ -36,6 +36,7 @@ typedef std::uint32_t u32;
 typedef std::uint8_t u8;
 typedef std::uint32_t Move;
 
+constexpr int MAX_THREADS = 64;
 constexpr int MAX_PLY = 128;
 constexpr int MAX_PHASE = 256;
 constexpr int INFINITY = 30000;
