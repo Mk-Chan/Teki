@@ -255,10 +255,10 @@ int qsearch(Position& pos, SearchStack* const ss, SearchGlobals& sg,
 
     int legal_moves = 0;
     for (Move move : mlist) {
-        if (!pos.legal_move(move))
-            continue;
         Position child_pos = pos;
         child_pos.make_move(move);
+        if (child_pos.checkers_to(THEM))
+            continue;
 
         ++legal_moves;
 
@@ -405,10 +405,10 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     Move best_move = 0;
     for (Move move : mlist) {
         // Check for legality and make move
-        if (!pos.legal_move(move))
-            continue;
         Position child_pos = pos;
         child_pos.make_move(move);
+        if (child_pos.checkers_to(THEM))
+            continue;
 
         ++legal_moves;
 

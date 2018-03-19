@@ -51,9 +51,26 @@ struct SpinOption
     std::function<void(int)> handler;
 };
 
+struct CheckOption
+{
+    CheckOption() {}
+    CheckOption(bool default_value, std::function<void(bool)> handler)
+        : default_value(default_value), handler(handler) {}
+
+    void setoption(bool value)
+    {
+        if (handler)
+            handler(value);
+    }
+
+    bool default_value;
+    std::function<void(bool)> handler;
+};
+
 namespace options
 {
     extern std::unordered_map<std::string, SpinOption> spins;
+    extern std::unordered_map<std::string, CheckOption> checks;
 }
 
 #endif

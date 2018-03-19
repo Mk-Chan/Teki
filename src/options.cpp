@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "tt.h"
 #include "options.h"
+#include "position.h"
 #include "definitions.h"
 
 namespace options
@@ -31,5 +32,9 @@ namespace options
     std::unordered_map<std::string, SpinOption> spins = {
         { "Hash", { 1, 1, 1048576, [](int s) { tt.resize(s); } } },
         { "Threads", { 1, 1, MAX_THREADS, nullptr } }
+    };
+
+    std::unordered_map<std::string, CheckOption> checks = {
+        { "UCI_Chess960", { castling::is_frc, [](bool b) { castling::is_frc = b; } } }
     };
 }

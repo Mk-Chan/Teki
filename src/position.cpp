@@ -168,6 +168,30 @@ void Position::init(std::stringstream& stream)
         }
     }
 
+    if (castling::is_frc)
+    {
+        int ksq = this->position_of(KING, US);
+        castling::spoilers[ksq] = 12;
+        castling::spoilers[ksq ^ 56] = 3;
+        u64 rook_bb = this->piece_bb(ROOK, US);
+        while (rook_bb) {
+            int rsq = fbitscan(rook_bb);
+            rook_bb &= rook_bb - 1;
+            if (rsq < ksq)
+            {
+                castling::rook_sqs[QUEENSIDE] = rsq;
+                castling::spoilers[rsq] = 13;
+                castling::spoilers[rsq ^ 56] = 7;
+            }
+            else if (rsq > ksq)
+            {
+                castling::rook_sqs[KINGSIDE] = rsq;
+                castling::spoilers[rsq] = 14;
+                castling::spoilers[rsq ^ 56] = 11;
+            }
+        }
+    }
+
     // Side to move
     stream >> part;
     bool need_to_flip = part == "b";
@@ -189,8 +213,37 @@ void Position::init(std::stringstream& stream)
             default: break;
             }
         }
-        else // TODO: Fischer Random Chess
+        else
         {
+            bool kqkq_notation = true;
+            switch (c) {
+            case 'K': this->castling_rights |= US_OO; break;
+            case 'Q': this->castling_rights |= US_OOO; break;
+            case 'k': this->castling_rights |= THEM_OO; break;
+            case 'q': this->castling_rights |= THEM_OOO; break;
+            default: kqkq_notation = false; break;
+            }
+
+            if (c >= 'a' && c <= 'h')
+            {
+                int file = c - 'a';
+                int rank = RANK_8;
+                int rsq = get_sq(file, rank);
+                if (castling::rook_sqs[KINGSIDE] == (rsq^56))
+                    this->castling_rights |= THEM_OO;
+                else
+                    this->castling_rights |= THEM_OOO;
+            }
+            else
+            {
+                int file = c - 'A';
+                int rank = RANK_1;
+                int rsq = get_sq(file, rank);
+                if (castling::rook_sqs[KINGSIDE] == rsq)
+                    this->castling_rights |= US_OO;
+                else
+                    this->castling_rights |= US_OOO;
+            }
         }
     }
 
@@ -247,7 +300,7 @@ u64 Position::attackers_to(int sq, int by_side, u64 occupancy) const
 
 u64 Position::checkers_to(int side) const
 {
-        return attackers_to(this->position_of(KING, side), !side);
+    return attackers_to(this->position_of(KING, side), !side);
 }
 
 u64 Position::calc_hash()
@@ -325,9 +378,9 @@ u64 Position::perft(int depth, bool root) const
     u64 leaves = u64(0);
     for (Move move : mlist) {
         Position pos = *this;
-        if (!pos.legal_move(move))
-            continue;
         pos.make_move(move);
+        if (pos.checkers_to(THEM))
+            continue;
         u64 count = pos.perft(depth - 1, false);
         leaves += count;
         if (root)

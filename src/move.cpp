@@ -30,7 +30,8 @@ std::string get_move_string(Move move, bool flipped)
     int from = from_sq(move),
         to = to_sq(move);
 
-    if (flipped) {
+    if (flipped)
+    {
         from ^= 56;
         to ^= 56;
     }
@@ -38,6 +39,16 @@ std::string get_move_string(Move move, bool flipped)
     std::string move_string;
     move_string.push_back('a' + file_of(from));
     move_string.push_back('1' + rank_of(from));
+
+    if (castling::is_frc && (move & CASTLING))
+    {
+        int qs_sq = flipped ? C8 : C1;
+        to = to == qs_sq ? castling::rook_sqs[QUEENSIDE]
+                         : castling::rook_sqs[KINGSIDE];
+        if (flipped)
+            to ^= 56;
+    }
+
     move_string.push_back('a' + file_of(to));
     move_string.push_back('1' + rank_of(to));
 

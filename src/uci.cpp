@@ -66,6 +66,13 @@ namespace handler
     {
         std::cout << "id name " << NAME << '\n'
                   << "id author " << AUTHOR << std::endl;
+        for (auto& name_option : options::checks) {
+            CheckOption& option = name_option.second;
+            std::string val = option.default_value ? "true" : "false";
+            std::cout << "option name " << name_option.first << " type check"
+                      << " default " << val
+                      << std::endl;
+        }
         for (auto& name_option : options::spins) {
             SpinOption& option = name_option.second;
             std::cout << "option name " << name_option.first << " type spin"
@@ -131,6 +138,27 @@ namespace handler
             stream >> value;
 
             options::spins[name].setoption(value);
+        }
+        if (options::checks.find(word) != options::checks.end())
+        {
+            std::string name = word;
+
+            stream >> word;
+            if (word != "value")
+                return;
+
+            std::string value_str;
+            stream >> value_str;
+
+            bool value;
+            if (value_str == "true")
+                value = true;
+            else if (value_str == "false")
+                value = false;
+            else
+                return;
+
+            options::checks[name].setoption(value);
         }
     }
 
