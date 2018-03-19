@@ -31,7 +31,8 @@ namespace options
 {
     std::unordered_map<std::string, SpinOption> spins = {
         { "Hash", { 1, 1, 1048576, [](int s) { tt.resize(s); } } },
-        { "Threads", { 1, 1, MAX_THREADS, nullptr } }
+        { "Threads", { 1, 1, MAX_THREADS, nullptr } },
+        { "Contempt", { 20, -100, 100, nullptr } }
     };
 
     std::unordered_map<std::string, CheckOption> checks = {

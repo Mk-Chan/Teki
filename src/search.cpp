@@ -136,7 +136,7 @@ inline bool stopped()
 }
 
 void reorder_moves(const Position& pos, SearchStack* ss, SearchGlobals& sg,
-        Move tt_move=0)
+                   Move tt_move=0)
 {
     std::vector<Move>& mlist = ss->mlist;
     std::vector<int>& orderlist = ss->orderlist;
@@ -221,7 +221,7 @@ int qsearch(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     ++sg.nodes_searched;
 
     if (pos.get_half_moves() > 99 || pos.is_repetition())
-        return 0;
+        return -options::spins["Contempt"].value;
 
     if (!(sg.nodes_searched & 2047) && (stopped() || thread::stop))
         return 0;
@@ -294,7 +294,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     if (ss->ply)
     {
         if (pos.get_half_moves() > 99 || pos.is_repetition())
-            return 0;
+            return -options::spins["Contempt"].value;
 
         if (ss->ply >= MAX_PLY)
             return pos.evaluate();
@@ -518,7 +518,9 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
 
     // Check for checkmate or stalemate
     if (!legal_moves)
-        return pos.checkers_to(US) ? -MATE + ss->ply : 0;
+        return pos.checkers_to(US)
+            ? -MATE + ss->ply
+            : -options::spins["Contempt"].value;
 
     // Transposition entry flag
     u64 flag = best_value >= beta ? FLAG_LOWER
