@@ -215,13 +215,12 @@ void Position::init(std::stringstream& stream)
         }
         else
         {
-            bool kqkq_notation = true;
             switch (c) {
             case 'K': this->castling_rights |= US_OO; break;
             case 'Q': this->castling_rights |= US_OOO; break;
             case 'k': this->castling_rights |= THEM_OO; break;
             case 'q': this->castling_rights |= THEM_OOO; break;
-            default: kqkq_notation = false; break;
+            default: break;
             }
 
             if (c >= 'a' && c <= 'h')

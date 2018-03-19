@@ -1,7 +1,7 @@
 ENGINE_NAME = Teki
 UCI_NAME = "\"$(ENGINE_NAME)\""
 
-CXX = clang++
+CXX = g++
 CXXFLAGS = -std=c++11 -Wall -pipe $(EXTRACXXFLAGS) -DNAME=$(UCI_NAME)
 LDFLAGS = -pthread -Wl,--no-as-needed $(CXXFLAGS) $(EXTRALDFLAGS)
 
@@ -14,9 +14,7 @@ EXE = teki
 
 ifeq ($(BUILD),debug)
 	CXXFLAGS += -g -fno-omit-frame-pointer
-endif
-
-ifeq ($(BUILD),release)
+else
 	CXXFLAGS += -O3 -flto -DNDEBUG
 endif
 
