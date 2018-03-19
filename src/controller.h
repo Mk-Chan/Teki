@@ -32,7 +32,8 @@ struct Controller
     std::uint64_t nodes_searched;
     time_ms start_time;
     time_ms end_time;
-    bool time_dependent;
+    volatile bool time_dependent;
+    volatile bool analyzing;
     volatile bool stop_search;
     bool limited_search;
     std::vector<uint32_t> search_moves;

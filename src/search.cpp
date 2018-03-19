@@ -553,7 +553,7 @@ void parallel_search(Position pos, int alpha, int beta, int depth, int threadnum
     }
 }
 
-Move Position::best_move()
+std::pair<Move, Move> Position::best_move()
 {
     constexpr int asp_delta[] = { 10, 30, 50, 100, 200, 300, INFINITY };
 
@@ -574,6 +574,7 @@ Move Position::best_move()
     }
 
     Move best_move;
+    Move ponder_move;
     int alpha = -INFINITY;
     int beta = +INFINITY;
     int adelta;
@@ -661,6 +662,8 @@ Move Position::best_move()
         uci::print_search(score, depth, time_passed, ss->pv, is_flipped());
 
         best_move = ss->pv[0];
+        if (depth > 1)
+            ponder_move = ss->pv[1];
 
         // Prepare aspiration window for next time
         if (depth > 4)
@@ -670,5 +673,9 @@ Move Position::best_move()
         }
     }
 
-    return best_move;
+    // Do not print bestmove during go infinite or ponder
+    while (controller.analyzing)
+        continue;
+
+    return { best_move, ponder_move };
 }

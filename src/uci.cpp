@@ -99,6 +99,14 @@ namespace handler
         std::cout << "readyok" << std::endl;
     }
 
+    void stop()
+    {
+        controller.analyzing = false;
+        controller.stop_search = true;
+        while (searching)
+            continue;
+    }
+
     void perft(Position& pos, std::stringstream& stream)
     {
         int depth;
@@ -164,6 +172,8 @@ namespace handler
 
     void position(Position& pos, std::stringstream& stream)
     {
+        handler::stop();
+
         std::string word;
         stream >> word;
         if (word == "startpos")
@@ -190,15 +200,17 @@ namespace handler
         controller.stop_search = false;
         controller.time_dependent = false;
         controller.limited_search = false;
+        controller.analyzing = false;
         controller.start_time = utils::curr_time();
         controller.end_time = controller.start_time;
         time_ms time_to_go = 1000;
         int moves_to_go = 35,
             increment = 0;
         while (stream >> word) {
-            if (word == "infinite")
+            if (word == "infinite" || word == "ponder")
             {
                 controller.time_dependent = false;
+                controller.analyzing = true;
             }
             else if (word == "movetime")
             {
@@ -268,20 +280,25 @@ namespace handler
         {
             searching = true;
             std::thread search_thread([&pos]() {
-                Move move = pos.best_move();
-                std::cout << "bestmove " << get_move_string(move, pos.is_flipped())
-                        << std::endl;
+                auto bestmove = pos.best_move();
+                std::cout << "bestmove "
+                          << get_move_string(bestmove.first, pos.is_flipped());
+                if (allow_ponder)
+                {
+                    std::cout << " ponder "
+                              << get_move_string(bestmove.second, !pos.is_flipped());
+                }
+                std::cout << std::endl;
                 searching = false;
             });
             search_thread.detach();
         }
     }
 
-    void stop()
+    void ponderhit()
     {
-        controller.stop_search = true;
-        while (searching)
-            continue;
+        controller.time_dependent = true;
+        controller.analyzing = false;
     }
 }
 
@@ -304,6 +321,7 @@ void loop()
         else if (word == "perft") handler::perft(pos, stream);
         else if (word == "position") handler::position(pos, stream);
         else if (word == "go") handler::go(pos, stream);
+        else if (word == "ponderhit") handler::ponderhit();
         else if (word == "stop") handler::stop();
         else if (word == "quit") break;
     }

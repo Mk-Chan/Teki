@@ -25,6 +25,7 @@ SOFTWARE.
 #ifndef POSITION_H
 #define POSITION_H
 
+#include <utility>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -38,6 +39,8 @@ namespace castling
     extern int rook_sqs[2];
     extern u8 spoilers[64];
 }
+
+extern bool allow_ponder;
 
 class Position
 {
@@ -81,7 +84,7 @@ public:
     // Operations
     void flip();
     int evaluate();
-    Move best_move();
+    std::pair<Move, Move> best_move();
     void make_move(Move move);
     void make_null_move();
 

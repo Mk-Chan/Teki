@@ -34,5 +34,7 @@ namespace castling
     u8 spoilers[64];
 }
 
+bool allow_ponder = true;
+
 TranspositionTable tt;
 Controller controller;
