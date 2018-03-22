@@ -6,7 +6,7 @@ CXXFLAGS = -std=c++11 -Wall -pipe $(EXTRACXXFLAGS) -DNAME=$(UCI_NAME)
 LDFLAGS = -pthread -Wl,--no-as-needed $(CXXFLAGS) $(EXTRALDFLAGS)
 
 OBJS = main.o uci.o lookups.o position.o movegen.o move.o search.o\
-       evaluate.o options.o globals.o
+       evaluate.o options.o globals.o tbprobe.o
 
 BINDIR = /usr/local/bin
 
@@ -22,6 +22,9 @@ all: $(EXE)
 
 $(EXE): $(OBJS)
 	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
+
+tbprobe.o: syzygy/tbprobe.c
+	$(CXX) $(CXXFLAGS)   -c -o $@ $<
 
 install:
 	-cp $(EXE) $(BINDIR)

@@ -43,6 +43,16 @@ constexpr int INFINITY = 30000;
 constexpr int MATE = 29000;
 constexpr int MAX_MATE_VALUE = MATE - MAX_PLY;
 
+constexpr std::int64_t TB_MATE_VAL = 28000;
+constexpr std::int64_t TB_CURSED_MATE_VAL = 1;
+constexpr std::int64_t tb_values[5] = {
+    -TB_MATE_VAL,
+    -TB_CURSED_MATE_VAL,
+    0,
+    TB_CURSED_MATE_VAL,
+    TB_MATE_VAL
+};
+
 enum GamePhase
 {
     MIDGAME,

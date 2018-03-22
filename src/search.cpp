@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <thread>
 
+#include "syzygy/tbprobe.h"
 #include "controller.h"
 #include "evaluate.h"
 #include "position.h"
@@ -77,6 +78,7 @@ struct SearchGlobals
     {
         reduce_history(true);
         nodes_searched = 0;
+        tb_hits = 0;
     }
 
     inline void reduce_history(bool to_zero=false)
@@ -91,6 +93,7 @@ struct SearchGlobals
         }
     }
 
+    u64 tb_hits;
     u64 nodes_searched;
     int history[6][64];
 };
@@ -329,6 +332,74 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
         }
     }
 
+	// Probe EGTB
+	// No castling allowed
+	// No fifty moves allowed
+	if (   TB_LARGEST > 0
+        && !pos.get_castling_rights()
+        && !pos.get_half_moves()
+        && popcnt(pos.occupancy_bb()) <= (int)TB_LARGEST)
+    {
+        int ep_sq = pos.get_ep_sq();
+        if (ss->ply)
+        {
+            unsigned int wdl = tb_probe_wdl(
+                    pos.color_bb(US), pos.color_bb(THEM),
+                    pos.piece_bb(KING), pos.piece_bb(QUEEN),
+                    pos.piece_bb(ROOK), pos.piece_bb(BISHOP),
+                    pos.piece_bb(KNIGHT), pos.piece_bb(PAWN), ep_sq,
+                    true
+                    );
+            if (wdl != TB_RESULT_FAILED)
+            {
+                ++sg.tb_hits;
+                int depth = std::min(depth + 6, MAX_PLY - 1);
+                TTEntry entry (0, FLAG_EXACT, depth, tb_values[wdl],
+                               pos.get_hash_key());
+                tt.write(entry);
+                return tb_values[wdl];
+            }
+        }
+        else
+        {
+            unsigned int res = tb_probe_root(
+                    pos.color_bb(US), pos.color_bb(THEM), pos.piece_bb(KING),
+                    pos.piece_bb(QUEEN), pos.piece_bb(ROOK),
+                    pos.piece_bb(BISHOP), pos.piece_bb(KNIGHT),
+                    pos.piece_bb(PAWN), pos.get_half_moves(), ep_sq,
+                    true, nullptr
+                    );
+            if (res != TB_RESULT_FAILED)
+            {
+                u32 prom = 0;
+                switch (TB_GET_PROMOTES(res)) {
+                    case TB_PROMOTES_QUEEN:
+                        prom = PROM_TO_QUEEN;
+                        break;
+                    case TB_PROMOTES_KNIGHT:
+                        prom = PROM_TO_KNIGHT;
+                        break;
+                    case TB_PROMOTES_ROOK:
+                        prom = PROM_TO_ROOK;
+                        break;
+                    case TB_PROMOTES_BISHOP:
+                        prom = PROM_TO_BISHOP;
+                        break;
+                    default:
+                        break;
+                }
+                int from = TB_GET_FROM(res);
+                int to = TB_GET_TO(res);
+                Move move = prom
+                    ? get_move(from, to, PROMOTION, CAP_NONE, prom)
+                    : get_move(from, to, NORMAL);
+                ss->pv.push_back(move);
+                controller.stop_search = true;
+                return tb_values[TB_GET_WDL(res)];
+            }
+        }
+	}
+
     int num_non_pawns = popcnt(pos.color_bb(US)
             & ~(pos.piece_bb(KING) ^ pos.piece_bb(PAWN)));
     bool in_check = pos.checkers_to(US);
@@ -419,7 +490,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
             for (int i = 0; i < options::spins["Threads"].value; ++i)
                 controller.nodes_searched += globals[i].nodes_searched;
             uci::print_currmove(move, legal_moves, controller.start_time,
-                    pos.is_flipped());
+                                pos.is_flipped());
         }
 
         int depth_left = depth - 1;
@@ -573,6 +644,7 @@ std::pair<Move, Move> Position::best_move()
         // Reset globals
         globals[i].reduce_history(true);
         globals[i].nodes_searched = 0;
+        globals[i].tb_hits = 0;
     }
 
     Move best_move;
@@ -655,8 +727,11 @@ std::pair<Move, Move> Position::best_move()
             break;
 
         controller.nodes_searched = 0;
-        for (int i = 0; i < num_threads; ++i)
+        controller.tb_hits = 0;
+        for (int i = 0; i < num_threads; ++i) {
             controller.nodes_searched += globals[i].nodes_searched;
+            controller.tb_hits += globals[i].tb_hits;
+        }
 
         SearchStack* ss = stacks[result_index];
 
@@ -664,7 +739,8 @@ std::pair<Move, Move> Position::best_move()
         uci::print_search(score, depth, time_passed, ss->pv, is_flipped());
 
         best_move = ss->pv[0];
-        if (depth > 1)
+        ponder_move = 0;
+        if (depth > 1 && ss->pv.size() > 1)
             ponder_move = ss->pv[1];
 
         // Prepare aspiration window for next time

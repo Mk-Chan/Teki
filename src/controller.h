@@ -30,6 +30,7 @@ SOFTWARE.
 struct Controller
 {
     std::uint64_t nodes_searched;
+    std::uint64_t tb_hits;
     time_ms start_time;
     time_ms end_time;
     volatile bool time_dependent;

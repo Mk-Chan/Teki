@@ -67,10 +67,28 @@ struct CheckOption
     std::function<void(bool)> handler;
 };
 
+struct StringOption
+{
+    StringOption() {}
+    StringOption(std::string value, std::function<void(std::string)> handler)
+        : value(value), handler(handler) {}
+
+    void setoption(std::string& value)
+    {
+        this->value = value;
+        if (handler)
+            handler(value);
+    }
+
+    std::string value;
+    std::function<void(std::string)> handler;
+};
+
 namespace options
 {
     extern std::unordered_map<std::string, SpinOption> spins;
     extern std::unordered_map<std::string, CheckOption> checks;
+    extern std::unordered_map<std::string, StringOption> strings;
 }
 
 #endif

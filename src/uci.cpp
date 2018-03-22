@@ -81,6 +81,12 @@ namespace handler
                       << " max " << option.max
                       << std::endl;
         }
+        for (auto& str_option: options::strings) {
+            StringOption& option = str_option.second;
+            std::cout << "option name " << str_option.first << " type string"
+                      << " default " << option.value
+                      << std::endl;
+        }
         std::cout << "uciok" << std::endl;
     }
 
@@ -147,7 +153,7 @@ namespace handler
 
             options::spins[name].setoption(value);
         }
-        if (options::checks.find(word) != options::checks.end())
+        else if (options::checks.find(word) != options::checks.end())
         {
             std::string name = word;
 
@@ -167,6 +173,19 @@ namespace handler
                 return;
 
             options::checks[name].setoption(value);
+        }
+        else if (options::strings.find(word) != options::strings.end())
+        {
+            std::string name = word;
+
+            stream >> word;
+            if (word != "value")
+                return;
+
+            std::string value;
+            stream >> value;
+
+            options::strings[name].setoption(value);
         }
     }
 
@@ -283,7 +302,7 @@ namespace handler
                 auto bestmove = pos.best_move();
                 std::cout << "bestmove "
                           << get_move_string(bestmove.first, pos.is_flipped());
-                if (allow_ponder)
+                if (allow_ponder && bestmove.second)
                 {
                     std::cout << " ponder "
                               << get_move_string(bestmove.second, !pos.is_flipped());
@@ -369,6 +388,7 @@ namespace uci
                 std::cout << (-score + MATE + 1) / 2;
         }
         std::cout << " depth " << depth;
+        std::cout << " tbhits " << controller.tb_hits;
         std::cout << " nodes " << controller.nodes_searched;
         std::cout << " time " << time;
         if (time > 1000)
