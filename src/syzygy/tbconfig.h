@@ -34,14 +34,14 @@
  * implementation. To do this supply a macro or function definition
  * here:
  */
-/* #define TB_CUSTOM_POP_COUNT(x) <DEFINITION> */
+#define TB_CUSTOM_POP_COUNT(x) __builtin_popcountll(x)
 
 /*
  * Define TB_CUSTOM_LSB to override the internal lsb
  * implementation. To do this supply a macro or function definition
  * here:
  */
-/* #define TB_CUSTOM_LSB(x) <DEFINITION> */
+#define TB_CUSTOM_LSB(x) __builtin_ctzll(x)
 
 /*
  * Define TB_CUSTOM_BSWAP32 to override the internal bswap32
