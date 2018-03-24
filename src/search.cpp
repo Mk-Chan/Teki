@@ -311,15 +311,19 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
         return 0;
 
     // Transposition table probe
+    bool tt_hit = false;
+    int tt_score = -INFINITY;
+    int tt_flag = -1;
     Move tt_move = 0;
     TTEntry tt_entry = tt.probe(pos.get_hash_key());
     if (tt_entry.get_key() == pos.get_hash_key())
     {
+        tt_hit = true;
         tt_move = tt_entry.get_move();
+        tt_score = value_from_tt(tt_entry.get_score(), ss->ply);
+        tt_flag = tt_entry.get_flag();
         if (!pv_node && tt_entry.get_depth() >= depth)
         {
-            int tt_score = value_from_tt(tt_entry.get_score(), ss->ply);
-            int tt_flag = tt_entry.get_flag();
             if (    tt_flag == FLAG_EXACT
                 || (tt_flag == FLAG_LOWER && tt_score >= beta)
                 || (tt_flag == FLAG_UPPER && tt_score <= alpha))
@@ -359,9 +363,28 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
             & ~(pos.piece_bb(KING) ^ pos.piece_bb(PAWN)));
     bool in_check = pos.checkers_to(US);
 
+    // Calculate position evaluation as static eval if no tt hit, otherwise
+    // try to use the tt score based on the bound
     int static_eval;
     if (!pv_node)
-        static_eval = pos.evaluate();
+    {
+        if (tt_flag == FLAG_EXACT)
+        {
+            static_eval = tt_score;
+        }
+        else
+        {
+            static_eval = pos.evaluate();
+            if (tt_hit)
+            {
+                if (   (static_eval < tt_score && tt_flag == FLAG_LOWER)
+                    || (static_eval > tt_score && tt_flag == FLAG_UPPER))
+                {
+                    static_eval = tt_score;
+                }
+            }
+        }
+    }
 
     // Forward pruning
     if (   !pv_node
