@@ -422,6 +422,19 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
         }
     }
 
+    // Internal iterative deepening
+    if (   !tt_move
+        && depth >= 5
+        && (pv_node || static_eval + 100 >= beta))
+    {
+        ss->forward_pruning = false;
+        search<true>(pos, ss, sg, alpha, beta, depth - 2);
+        ss->forward_pruning = true;
+
+        tt_entry = tt.probe(pos.get_hash_key());
+        tt_move = tt_entry.get_move();
+    }
+
     // Get a pre-allocated movelist
     std::vector<Move>& mlist = ss->mlist;
     mlist.clear();
