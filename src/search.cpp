@@ -284,7 +284,7 @@ int qsearch(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     return alpha;
 }
 
-template <bool pv_node, bool main_thread=false>
+template <bool pv_node>
 int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
            int alpha, int beta, int depth)
 {
@@ -294,20 +294,17 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
 
     ++sg.nodes_searched;
 
-    if (ss->ply)
-    {
-        if (pos.get_half_moves() > 99 || pos.is_repetition())
-            return -options::spins["Contempt"].value;
+    if (pos.get_half_moves() > 99 || pos.is_repetition())
+        return -options::spins["Contempt"].value;
 
-        if (ss->ply >= MAX_PLY)
-            return pos.evaluate();
+    if (ss->ply >= MAX_PLY)
+        return pos.evaluate();
 
-        // Mate distance pruning
-        alpha = std::max((-MATE + ss->ply), alpha);
-        beta  = std::min((MATE - ss->ply), beta);
-        if (alpha >= beta)
-            return alpha;
-    }
+    // Mate distance pruning
+    alpha = std::max((-MATE + ss->ply), alpha);
+    beta  = std::min((MATE - ss->ply), beta);
+    if (alpha >= beta)
+        return alpha;
 
     // Check if time is left
     if (!(sg.nodes_searched & 2047) && (stopped() || thread::stop))
@@ -340,63 +337,21 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
         && !pos.get_half_moves()
         && popcnt(pos.occupancy_bb()) <= (int)TB_LARGEST)
     {
-        int ep_sq = pos.get_ep_sq();
-        if (ss->ply)
+        unsigned int wdl = tb_probe_wdl(
+                pos.color_bb(US), pos.color_bb(THEM),
+                pos.piece_bb(KING), pos.piece_bb(QUEEN),
+                pos.piece_bb(ROOK), pos.piece_bb(BISHOP),
+                pos.piece_bb(KNIGHT), pos.piece_bb(PAWN), pos.get_ep_sq(),
+                true
+                );
+        if (wdl != TB_RESULT_FAILED)
         {
-            unsigned int wdl = tb_probe_wdl(
-                    pos.color_bb(US), pos.color_bb(THEM),
-                    pos.piece_bb(KING), pos.piece_bb(QUEEN),
-                    pos.piece_bb(ROOK), pos.piece_bb(BISHOP),
-                    pos.piece_bb(KNIGHT), pos.piece_bb(PAWN), ep_sq,
-                    true
-                    );
-            if (wdl != TB_RESULT_FAILED)
-            {
-                ++sg.tb_hits;
-                int depth = std::min(depth + 6, MAX_PLY - 1);
-                TTEntry entry (0, FLAG_EXACT, depth, tb_values[wdl],
-                               pos.get_hash_key());
-                tt.write(entry);
-                return tb_values[wdl];
-            }
-        }
-        else
-        {
-            unsigned int res = tb_probe_root(
-                    pos.color_bb(US), pos.color_bb(THEM), pos.piece_bb(KING),
-                    pos.piece_bb(QUEEN), pos.piece_bb(ROOK),
-                    pos.piece_bb(BISHOP), pos.piece_bb(KNIGHT),
-                    pos.piece_bb(PAWN), pos.get_half_moves(), ep_sq,
-                    true, nullptr
-                    );
-            if (res != TB_RESULT_FAILED)
-            {
-                u32 prom = 0;
-                switch (TB_GET_PROMOTES(res)) {
-                    case TB_PROMOTES_QUEEN:
-                        prom = PROM_TO_QUEEN;
-                        break;
-                    case TB_PROMOTES_KNIGHT:
-                        prom = PROM_TO_KNIGHT;
-                        break;
-                    case TB_PROMOTES_ROOK:
-                        prom = PROM_TO_ROOK;
-                        break;
-                    case TB_PROMOTES_BISHOP:
-                        prom = PROM_TO_BISHOP;
-                        break;
-                    default:
-                        break;
-                }
-                int from = TB_GET_FROM(res);
-                int to = TB_GET_TO(res);
-                Move move = prom
-                    ? get_move(from, to, PROMOTION, CAP_NONE, prom)
-                    : get_move(from, to, NORMAL);
-                ss->pv.push_back(move);
-                controller.stop_search = true;
-                return tb_values[TB_GET_WDL(res)];
-            }
+            ++sg.tb_hits;
+            int depth = std::min(depth + 6, MAX_PLY - 1);
+            TTEntry entry (0, FLAG_EXACT, depth, tb_values[wdl],
+                            pos.get_hash_key());
+            tt.write(entry);
+            return tb_values[wdl];
         }
 	}
 
@@ -448,20 +403,11 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     std::vector<Move>& mlist = ss->mlist;
     mlist.clear();
 
-    if (controller.limited_search && !ss->ply)
-    {
-        std::copy(controller.search_moves.begin(),
-                  controller.search_moves.end(),
-                  std::back_inserter(mlist));
-    }
+    // Populate the movelist
+    if (in_check)
+        pos.generate_in_check_movelist(mlist);
     else
-    {
-        // Populate the movelist
-        if (in_check)
-            pos.generate_in_check_movelist(mlist);
-        else
-            pos.generate_movelist(mlist);
-    }
+        pos.generate_movelist(mlist);
 
     // Reorder the moves
     reorder_moves(pos, ss, sg, tt_move);
@@ -482,22 +428,10 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
             continue;
 
         ++legal_moves;
-
-        // Print move being searched at root
-        if (main_thread && !ss->ply)
-        {
-            controller.nodes_searched = 0;
-            for (int i = 0; i < options::spins["Threads"].value; ++i)
-                controller.nodes_searched += globals[i].nodes_searched;
-            uci::print_currmove(move, legal_moves, controller.start_time,
-                                pos.is_flipped());
-        }
-
         int depth_left = depth - 1;
 
         // Heuristic pruning and reductions
-        if (   ss->ply
-            && best_value > -MAX_MATE_VALUE
+        if (   best_value > -MAX_MATE_VALUE
             && legal_moves > 1
             && num_non_pawns
             && !prom_type(move)
@@ -528,15 +462,15 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
         if (legal_moves == 1)
         {
             value = -search<pv_node>(child_pos, ss + 1, sg, -beta , -alpha,
-                    depth_left);
+                                     depth_left);
         }
         else
         {
             value = -search<false>(child_pos, ss + 1, sg, -alpha - 1, -alpha,
-                    depth_left);
+                                   depth_left);
             if (value > alpha)
                 value = -search<pv_node>(child_pos, ss + 1, sg, -beta , -alpha,
-                        std::max(depth_left, depth - 1));
+                                         std::max(depth_left, depth - 1));
         }
 
         // Check if time is left
@@ -606,6 +540,200 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     return best_value;
 }
 
+template <bool main_thread>
+int search_root(Position& pos, SearchStack* const ss, SearchGlobals& sg,
+                int alpha, int beta, int depth)
+{
+    ss->pv.clear();
+    ++sg.nodes_searched;
+
+    // Check if time is left
+    if (!(sg.nodes_searched & 2047) && (stopped() || thread::stop))
+        return 0;
+
+    // Transposition table probe
+    TTEntry tt_entry = tt.probe(pos.get_hash_key());
+    Move tt_move = tt_entry.get_key() == pos.get_hash_key()
+        ? tt_entry.get_move()
+        : 0;
+
+	// Probe EGTB
+	// No castling allowed
+	// No fifty moves allowed
+	if (   TB_LARGEST > 0
+        && !pos.get_castling_rights()
+        && !pos.get_half_moves()
+        && popcnt(pos.occupancy_bb()) <= (int)TB_LARGEST)
+    {
+        unsigned int res = tb_probe_root(
+                pos.color_bb(US), pos.color_bb(THEM), pos.piece_bb(KING),
+                pos.piece_bb(QUEEN), pos.piece_bb(ROOK),
+                pos.piece_bb(BISHOP), pos.piece_bb(KNIGHT),
+                pos.piece_bb(PAWN), pos.get_half_moves(), pos.get_ep_sq(),
+                true, nullptr
+                );
+        if (res != TB_RESULT_FAILED)
+        {
+            u32 prom = 0;
+            switch (TB_GET_PROMOTES(res)) {
+                case TB_PROMOTES_QUEEN:
+                    prom = PROM_TO_QUEEN;
+                    break;
+                case TB_PROMOTES_KNIGHT:
+                    prom = PROM_TO_KNIGHT;
+                    break;
+                case TB_PROMOTES_ROOK:
+                    prom = PROM_TO_ROOK;
+                    break;
+                case TB_PROMOTES_BISHOP:
+                    prom = PROM_TO_BISHOP;
+                    break;
+                default:
+                    break;
+            }
+            int from = TB_GET_FROM(res);
+            int to = TB_GET_TO(res);
+            Move move = prom
+                ? get_move(from, to, PROMOTION, CAP_NONE, prom)
+                : get_move(from, to, NORMAL);
+            ss->pv.push_back(move);
+            controller.stop_search = true;
+            return tb_values[TB_GET_WDL(res)];
+        }
+    }
+
+    // Get a pre-allocated movelist
+    std::vector<Move>& mlist = ss->mlist;
+    mlist.clear();
+
+    bool in_check = pos.checkers_to(US);
+    if (controller.limited_search)
+    {
+        std::copy(controller.search_moves.begin(),
+                  controller.search_moves.end(),
+                  std::back_inserter(mlist));
+    }
+    else
+    {
+        // Populate the movelist
+        if (in_check)
+            pos.generate_in_check_movelist(mlist);
+        else
+            pos.generate_movelist(mlist);
+    }
+
+    // Reorder the moves
+    reorder_moves(pos, ss, sg, tt_move);
+
+    // In-check extension
+    if (in_check)
+        ++depth;
+
+    int old_alpha = alpha;
+    int best_value = -INFINITY,
+        legal_moves = 0;
+    Move best_move = 0;
+    for (Move move : mlist) {
+        // Check for legality and make move
+        Position child_pos = pos;
+        child_pos.make_move(move);
+        if (child_pos.checkers_to(THEM))
+            continue;
+
+        ++legal_moves;
+
+        // Print move being searched at root
+        if (main_thread)
+        {
+            controller.nodes_searched = 0;
+            for (int i = 0; i < options::spins["Threads"].value; ++i)
+                controller.nodes_searched += globals[i].nodes_searched;
+            uci::print_currmove(move, legal_moves, controller.start_time,
+                                pos.is_flipped());
+        }
+
+        int depth_left = depth - 1;
+
+        // Principal Variation Search (PVS)
+        int value;
+        if (legal_moves == 1)
+        {
+            value = -search<true>(child_pos, ss + 1, sg, -beta , -alpha,
+                                     depth_left);
+        }
+        else
+        {
+            value = -search<false>(child_pos, ss + 1, sg, -alpha - 1, -alpha,
+                                   depth_left);
+            if (value > alpha)
+                value = -search<true>(child_pos, ss + 1, sg, -beta , -alpha,
+                                      std::max(depth_left, depth - 1));
+        }
+
+        // Check if time is left
+        if (!(sg.nodes_searched & 2047) && (stopped() || thread::stop))
+            return 0;
+
+        if (value > best_value)
+        {
+            best_value = value;
+            best_move = move;
+
+            if (value > alpha)
+            {
+                alpha = value;
+
+                // Update PV
+                ss->pv.clear();
+                ss->pv.push_back(move);
+                ss->pv.insert(ss->pv.end(), ss[1].pv.begin(), ss[1].pv.end());
+
+                // Update history
+                bool quiet_move = !((move & CAPTURE_MASK) || (move & PROMOTION));
+                if (quiet_move && depth <= MAX_HISTORY_DEPTH)
+                {
+                    int pt = pos.piece_on(from_sq(move));
+                    int to = to_sq(move);
+                    sg.history[pt][to] += depth * depth;
+
+                    // Reduce history if it overflows
+                    if (sg.history[pt][to] > HISTORY_LIMIT)
+                        sg.reduce_history();
+                }
+
+                if (value >= beta)
+                {
+                    // Update killer moves
+                    if (quiet_move && move != ss->killer_move[0])
+                    {
+                        ss->killer_move[1] = ss->killer_move[0];
+                        ss->killer_move[0] = move;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    // Check for checkmate or stalemate
+    if (!legal_moves)
+        return pos.checkers_to(US)
+            ? -MATE + ss->ply
+            : -options::spins["Contempt"].value;
+
+    // Transposition entry flag
+    u64 flag = best_value >= beta ? FLAG_LOWER
+        : best_value > old_alpha ? FLAG_EXACT
+        : FLAG_UPPER;
+
+    // Create a tt entry and store it
+    TTEntry entry(best_move, flag, depth, value_to_tt(best_value, ss->ply),
+                  pos.get_hash_key());
+    tt.write(entry);
+
+    return best_value;
+}
+
 void parallel_search(Position pos, int alpha, int beta, int depth, int threadnum)
 {
     auto& res = results[threadnum];
@@ -614,7 +742,7 @@ void parallel_search(Position pos, int alpha, int beta, int depth, int threadnum
     res.second = false; // Mark as invalid result
 
     // Start parallel search
-    res.first = search<true>(pos, ss, sg, alpha, beta, depth);
+    res.first = search_root<false>(pos, ss, sg, alpha, beta, depth);
 
     // If this thread finished searching before the others, then thread::stop
     // will not be set. Therefore set it to stop all others and mark this
@@ -673,7 +801,7 @@ std::pair<Move, Move> Position::best_move()
                 }
 
                 // Start main thread
-                results[0].first = search<true, true>(
+                results[0].first = search_root<true>(
                     *this, stacks[0], globals[0], alpha, beta, depth
                 );
 
