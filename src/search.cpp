@@ -390,7 +390,8 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
     if (   !pv_node
         && num_non_pawns
         && !in_check
-        && ss->forward_pruning)
+        && ss->forward_pruning
+        && beta > -MAX_MATE_VALUE)
     {
         // Reverse futility pruning
         if (   depth < 3
