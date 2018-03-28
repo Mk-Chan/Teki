@@ -11,7 +11,9 @@ fi
 
 echo "Version name/number: $1"
 
-CORES=`grep -c ^processor /proc/cpuinfo`
+if [[ -z $CORES ]]; then
+    CORES=1
+fi
 echo "Using $CORES cores"
 
 # Clear build space
