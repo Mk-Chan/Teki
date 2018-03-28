@@ -74,20 +74,15 @@ for CXX in ${COMPILERS[@]}; do
     ARCH=${ARCHS[$i]}
     EXT=${EXTS[$i]}
 
-    mkdir build
-    cd build
-    cmake \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_CXX_COMPILER=$CXX \
-        -DEXTRA_CXX_FLAGS=$ARCH \
-        -DEXTRA_LINK_FLAGS="-static" \
-        -DEXEC_NAME="\"Teki $1\"" \
-        ..
-    make -j$CORES
-    cd ..
-    mv build/teki release/Teki$1_$EXT
+    make \
+        CXX=$CXX \
+        EXTRACXXFLAGS=$ARCH \
+        EXTRALDFLAGS="-static" \
+        ENGINE_NAME="Teki $1" \
+        -j$CORES
+    mv teki release/Teki$1_$EXT
     strip -s release/Teki$1_$EXT
-    rm -rf build
+    make clean
 
     i=$((i+1))
 done
