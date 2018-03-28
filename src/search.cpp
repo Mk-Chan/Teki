@@ -351,9 +351,8 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
         if (wdl != TB_RESULT_FAILED)
         {
             ++sg.tb_hits;
-            int depth = std::min(depth + 6, MAX_PLY - 1);
-            TTEntry entry (0, FLAG_EXACT, depth, tb_values[wdl],
-                            pos.get_hash_key());
+            int d = std::min(depth + 6, MAX_PLY - 1);
+            TTEntry entry (0, FLAG_EXACT, d, tb_values[wdl], pos.get_hash_key());
             tt.write(entry);
             return tb_values[wdl];
         }
@@ -812,8 +811,8 @@ std::pair<Move, Move> Position::best_move()
         globals[i].tb_hits = 0;
     }
 
-    Move best_move;
-    Move ponder_move;
+    Move best_move = 0;
+    Move ponder_move = 0;
     int alpha = -INFINITY;
     int beta = +INFINITY;
     int adelta;
