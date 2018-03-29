@@ -43,6 +43,7 @@ echo "Using $CXX for Linux 64-bits & 32-bits"
 # Set Linux 32-bit and 64-bit C++ compilers
 ARCHS=("-m32" "-m64" "" "")
 COMPILERS=($CXX $CXX)
+EXTRA_LD_FLAGS=("" "")
 EXTS=("linux32" "linux64")
 
 # Set Windows 32-bit C++ compiler
@@ -53,6 +54,7 @@ fi
 if [ -x "$(command -v $WIN_CXX_32)" ]; then
     COMPILERS+=($WIN_CXX_32)
     EXTS+=("win32.exe")
+    EXTRA_LD_FLAGS+=("-static")
     echo "$WIN_CXX_32 found for Win32"
     echo "Using compiler $WIN_CXX_32 for Win32"
 fi
@@ -65,6 +67,7 @@ fi
 if [ -x "$(command -v $WIN_CXX_64)" ]; then
     COMPILERS+=($WIN_CXX_64)
     EXTS+=("win64.exe")
+    EXTRA_LD_FLAGS+=("-static")
     echo "$WIN_CXX_64 found for Win64"
     echo "Using compiler $WIN_CXX_64 for Win64"
 fi
@@ -75,11 +78,12 @@ i=0
 for CXX in ${COMPILERS[@]}; do
     ARCH=${ARCHS[$i]}
     EXT=${EXTS[$i]}
+    EXTRA_LD_FLAG=${EXTRA_LD_FLAGS[$i]}
 
     make \
         CXX=$CXX \
         EXTRACXXFLAGS=$ARCH \
-        EXTRALDFLAGS="-static" \
+        EXTRALDFLAGS=$EXTRA_LD_FLAG \
         ENGINE_NAME="Teki $1" \
         -j$CORES
     mv teki release/Teki$1_$EXT
