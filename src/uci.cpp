@@ -370,8 +370,8 @@ namespace uci
         }
     }
 
-    void print_search(int score, int depth, time_ms time, std::vector<Move>& pv,
-                      bool flipped)
+    void print_search(int score, int depth, int bound, time_ms time,
+                      std::vector<Move>& pv, bool flipped)
     {
         std::cout << "info";
         std::cout << " score ";
@@ -387,6 +387,10 @@ namespace uci
             else
                 std::cout << (-score + MATE + 1) / 2;
         }
+        if (bound == UPPER_BOUND)
+            std::cout << " upperbound";
+        else if (bound == LOWER_BOUND)
+            std::cout << " lowerbound";
         std::cout << " depth " << depth;
         std::cout << " tbhits " << controller.tb_hits;
         std::cout << " nodes " << controller.nodes_searched;

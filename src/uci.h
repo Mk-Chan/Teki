@@ -37,8 +37,9 @@ SOFTWARE.
 namespace uci
 {
     extern void init();
-    extern void print_currmove(Move move, int move_num, time_ms start_time, bool flipped);
-    extern void print_search(int score, int depth, time_ms time,
+    extern void print_currmove(Move move, int move_num, time_ms start_time,
+                               bool flipped);
+    extern void print_search(int score, int depth, int bound, time_ms time,
                              std::vector<Move>& pv, bool flipped);
 }
 

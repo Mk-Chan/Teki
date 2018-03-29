@@ -108,6 +108,13 @@ enum CastlingRights
     THEM_OO = 4, THEM_OOO = 8
 };
 
+enum Bound
+{
+    UPPER_BOUND,
+    LOWER_BOUND,
+    EXACT_BOUND
+};
+
 inline int get_sq(int file, int rank) { return (rank << 3) ^ file; }
 inline int rank_of(int sq) { return sq >> 3; }
 inline int file_of(int sq) { return sq & 7; }

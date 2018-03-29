@@ -695,7 +695,7 @@ int search_root(Position& pos, SearchStack* const ss, SearchGlobals& sg,
         if (legal_moves == 1)
         {
             value = -search<true>(child_pos, ss + 1, sg, -beta , -alpha,
-                                     depth_left);
+                                  depth_left);
         }
         else
         {
@@ -715,14 +715,14 @@ int search_root(Position& pos, SearchStack* const ss, SearchGlobals& sg,
             best_value = value;
             best_move = move;
 
+            // Update PV
+            ss->pv.clear();
+            ss->pv.push_back(move);
+            ss->pv.insert(ss->pv.end(), ss[1].pv.begin(), ss[1].pv.end());
+
             if (value > alpha)
             {
                 alpha = value;
-
-                // Update PV
-                ss->pv.clear();
-                ss->pv.push_back(move);
-                ss->pv.insert(ss->pv.end(), ss[1].pv.begin(), ss[1].pv.end());
 
                 // Update history
                 bool quiet_move = !((move & CAPTURE_MASK) || (move & PROMOTION));
@@ -869,6 +869,22 @@ std::pair<Move, Move> Position::best_move()
             if (stopped())
                 break;
 
+            controller.nodes_searched = 0;
+            controller.tb_hits = 0;
+            for (int i = 0; i < num_threads; ++i) {
+                controller.nodes_searched += globals[i].nodes_searched;
+                controller.tb_hits += globals[i].tb_hits;
+            }
+
+            SearchStack* ss = stacks[result_index];
+            time_ms time_passed = utils::curr_time() - controller.start_time;
+            int bound = score >= beta
+                           ? LOWER_BOUND
+                           : score <= alpha
+                               ? UPPER_BOUND
+                               : EXACT_BOUND;
+            uci::print_search(score, depth, bound, time_passed, ss->pv, is_flipped());
+
             // Failed low, decrease alpha and repeat
             if (score <= alpha)
             {
@@ -890,18 +906,7 @@ std::pair<Move, Move> Position::best_move()
         if (depth > 1 && stopped())
             break;
 
-        controller.nodes_searched = 0;
-        controller.tb_hits = 0;
-        for (int i = 0; i < num_threads; ++i) {
-            controller.nodes_searched += globals[i].nodes_searched;
-            controller.tb_hits += globals[i].tb_hits;
-        }
-
         SearchStack* ss = stacks[result_index];
-
-        time_ms time_passed = utils::curr_time() - controller.start_time;
-        uci::print_search(score, depth, time_passed, ss->pv, is_flipped());
-
         best_move = ss->pv[0];
         ponder_move = 0;
         if (depth > 1 && ss->pv.size() > 1)
