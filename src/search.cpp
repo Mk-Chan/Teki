@@ -833,7 +833,7 @@ std::pair<Move, Move> Position::best_move()
                 // Start helper threads
                 for (int i = 1; i < num_threads; ++i) {
                     threads[i] = std::thread {parallel_search, *this, alpha,
-                                              beta, depth, i};
+                                              beta, depth + (i & 1), i};
                 }
 
                 // Start main thread
