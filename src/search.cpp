@@ -858,7 +858,7 @@ std::pair<Move, Move> Position::best_move()
             // Perform single threaded search
             else
             {
-                results[0].first = search<true>(
+                results[0].first = search_root<true>(
                     *this, stacks[0], globals[0], alpha, beta, depth
                 );
             }
