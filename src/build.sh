@@ -44,7 +44,7 @@ echo "Using $CXX for Linux 64-bits & 32-bits"
 ARCHS=("-m32" "-m64" "" "")
 COMPILERS=($CXX $CXX)
 EXTRA_LD_FLAGS=("" "")
-EXTS=("linux32" "linux64")
+EXTS=("Linux32" "Linux64")
 
 # Set Windows 32-bit C++ compiler
 if [[ -z $WIN_CXX_32 ]]; then
@@ -53,7 +53,7 @@ if [[ -z $WIN_CXX_32 ]]; then
 fi
 if [ -x "$(command -v $WIN_CXX_32)" ]; then
     COMPILERS+=($WIN_CXX_32)
-    EXTS+=("win32.exe")
+    EXTS+=("Win32.exe")
     EXTRA_LD_FLAGS+=("-static")
     echo "$WIN_CXX_32 found for Win32"
     echo "Using compiler $WIN_CXX_32 for Win32"
@@ -66,7 +66,7 @@ if [[ -z $WIN_CXX_64 ]]; then
 fi
 if [ -x "$(command -v $WIN_CXX_64)" ]; then
     COMPILERS+=($WIN_CXX_64)
-    EXTS+=("win64.exe")
+    EXTS+=("Win64.exe")
     EXTRA_LD_FLAGS+=("-static")
     echo "$WIN_CXX_64 found for Win64"
     echo "Using compiler $WIN_CXX_64 for Win64"

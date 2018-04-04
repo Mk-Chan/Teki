@@ -15,7 +15,7 @@ EXE = teki
 ifeq ($(BUILD),debug)
 	CXXFLAGS += -g -fno-omit-frame-pointer
 else
-	CXXFLAGS += -O3 -flto -DNDEBUG
+	CXXFLAGS += -O3 -DNDEBUG
 endif
 
 all: $(EXE)
