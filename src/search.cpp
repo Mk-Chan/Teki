@@ -772,13 +772,13 @@ int search_root(Position& pos, SearchStack* const ss, SearchGlobals& sg,
 
 void parallel_search(Position pos, int alpha, int beta, int depth, int threadnum)
 {
-    auto& res = results[threadnum];
+    auto& [value, valid] = results[threadnum];
     auto& sg = globals[threadnum];
     SearchStack* ss = stacks[threadnum];
-    res.second = false; // Mark as invalid result
+    valid = false; // Mark as invalid result
 
     // Start parallel search
-    res.first = search_root<false>(pos, ss, sg, alpha, beta, depth);
+    value = search_root<false>(pos, ss, sg, alpha, beta, depth);
 
     // If this thread finished searching before the others, then thread::stop
     // will not be set. Therefore set it to stop all others and mark this
@@ -786,7 +786,7 @@ void parallel_search(Position pos, int alpha, int beta, int depth, int threadnum
     if (!thread::stop)
     {
         thread::stop = true;
-        res.second = true;
+        valid = true;
     }
 }
 

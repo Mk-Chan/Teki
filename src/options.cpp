@@ -42,12 +42,10 @@ namespace options
         { "Threads", { 1, 1, MAX_THREADS, nullptr } },
         { "Contempt", { 20, -100, 100, nullptr } }
     };
-
     std::unordered_map<std::string, CheckOption> checks = {
         { "UCI_Chess960", { castling::is_frc, [](bool b) { castling::is_frc = b; } } },
         { "Ponder", { allow_ponder, [](bool b) { allow_ponder = b; } } }
     };
-
     std::unordered_map<std::string, StringOption> strings = {
         { "SyzygyPath", { "None", { [](std::string s) { syzygy_path_handler(s); } } } }
     };

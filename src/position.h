@@ -35,12 +35,12 @@ SOFTWARE.
 
 namespace castling
 {
-    extern bool is_frc;
-    extern int rook_sqs[2];
-    extern u8 spoilers[64];
+    inline bool is_frc = false;
+    inline int rook_sqs[2];
+    inline u8 spoilers[64];
 }
 
-extern bool allow_ponder;
+inline bool allow_ponder = true;
 
 class Position
 {
