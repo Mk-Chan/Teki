@@ -66,24 +66,21 @@ namespace handler
     {
         std::cout << "id name " << NAME << '\n'
                   << "id author " << AUTHOR << std::endl;
-        for (auto& name_option : options::checks) {
-            CheckOption& option = name_option.second;
+        for (auto& [name, option] : options::checks) {
             std::string val = option.default_value ? "true" : "false";
-            std::cout << "option name " << name_option.first << " type check"
+            std::cout << "option name " << name << " type check"
                       << " default " << val
                       << std::endl;
         }
-        for (auto& name_option : options::spins) {
-            SpinOption& option = name_option.second;
-            std::cout << "option name " << name_option.first << " type spin"
+        for (auto& [name, option] : options::spins) {
+            std::cout << "option name " << name << " type spin"
                       << " default " << option.value
                       << " min " << option.min
                       << " max " << option.max
                       << std::endl;
         }
-        for (auto& str_option: options::strings) {
-            StringOption& option = str_option.second;
-            std::cout << "option name " << str_option.first << " type string"
+        for (auto& [name, option]: options::strings) {
+            std::cout << "option name " << name << " type string"
                       << " default " << option.value
                       << std::endl;
         }
