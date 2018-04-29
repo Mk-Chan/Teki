@@ -25,6 +25,7 @@ SOFTWARE.
 #include "position.h"
 #include "move.h"
 #include "lookups.h"
+#include "evaluate.h"
 
 char piece_char(int pt, int c)
 {
@@ -399,4 +400,53 @@ bool Position::is_repetition() const
         if (prev_hash_keys[i] == curr_hash)
             return true;
     return false;
+}
+
+Move Position::smallest_capture_move(int sq) const
+{
+    int sq_pt = this->piece_on(sq);
+    if (sq_pt == PAWN)
+    {
+        u64 candidates_bb = lookups::pawn(sq, THEM) & this->piece_bb(PAWN, US);
+        if (candidates_bb)
+        {
+            if (rank_of(sq) == RANK_8)
+                return get_move(fbitscan(candidates_bb), sq, PROM_CAPTURE, sq_pt,
+                                QUEEN);
+        }
+    }
+    u64 forward_mask = lookups::north_region(sq) | lookups::east(sq);
+    u64 backward_mask = lookups::south_region(sq) | lookups::west(sq);
+    for (int pt = PAWN; pt <= KING; ++pt) {
+        u64 candidates_bb = pt == PAWN
+                          ? lookups::pawn(sq, THEM)
+                          : lookups::attacks(pt, sq, this->occupancy_bb());
+        candidates_bb &= this->piece_bb(pt, US);
+        u64 backward_candidates = candidates_bb & backward_mask;
+        if (backward_candidates)
+            return get_move(rbitscan(backward_candidates), sq, CAPTURE, sq_pt);
+        u64 forward_candidates = candidates_bb & forward_mask;
+        if (forward_candidates)
+            return get_move(fbitscan(forward_candidates), sq, CAPTURE, sq_pt);
+    }
+
+    return 0;
+}
+
+int Position::see(int sq) const
+{
+    Position pos = *this;
+    Move smallest_cap = pos.smallest_capture_move(sq);
+    if (!smallest_cap)
+        return 0;
+    int pt = pos.piece_on(sq);
+    if (pt != NO_PIECE)
+    {
+        int piece_val = piece_value[pt].value();
+        if (smallest_cap & PROMOTION_TYPE_MASK)
+            piece_val += piece_value[prom_type(smallest_cap)].value();
+        pos.make_move(smallest_cap);
+        return std::max(0, piece_val - pos.see(sq ^ 56));
+    }
+    return 0;
 }

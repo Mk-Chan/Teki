@@ -80,6 +80,8 @@ public:
     void generate_quiesce_movelist(std::vector<Move>& mlist) const;
     bool is_repetition() const;
     bool legal_move(Move move) const;
+    Move smallest_capture_move(int sq) const;
+    int see(int sq) const;
 
     // Operations
     void flip();

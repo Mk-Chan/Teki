@@ -72,6 +72,10 @@ namespace lookups
     extern u64 northwest(int square);
     extern u64 southeast(int square);
     extern u64 southwest(int square);
+    extern u64 north_region(int square);
+    extern u64 south_region(int square);
+    extern u64 east_region(int square);
+    extern u64 west_region(int square);
 
     extern u64 pawn(int square, int side);
     extern u64 knight(int square);

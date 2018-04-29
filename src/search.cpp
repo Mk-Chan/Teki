@@ -406,7 +406,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
             Position child = pos;
             child.make_null_move();
             int val = -search<false>(child, ss + 1, sg, -beta, -beta + 1,
-                    depth_left);
+                                     depth_left);
             ss[1].forward_pruning = true;
 
             // Check if time is left

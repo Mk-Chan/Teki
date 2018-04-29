@@ -57,6 +57,10 @@ u64 northeast_bb[64];
 u64 northwest_bb[64];
 u64 southeast_bb[64];
 u64 southwest_bb[64];
+u64 north_region_bb[64];
+u64 south_region_bb[64];
+u64 east_region_bb[64];
+u64 west_region_bb[64];
 
 u64 passed_pawn_mask_bb[64];
 u64 king_danger_zone_bb[64];
@@ -295,6 +299,27 @@ void init_eval_masks()
     }
 }
 
+void init_regions()
+{
+    u64 nr, wr, sr, er;
+    for (int sq = A1; sq <= H8; ++sq) {
+        nr = wr = sr = er = 0ULL;
+        for (int r = rank_of(sq) + 1; r <= RANK_8; ++r)
+            nr |= lookups::rank_mask(get_sq(FILE_A, r));
+        for (int r = rank_of(sq) - 1; r >= RANK_1; --r)
+            sr |= lookups::rank_mask(get_sq(FILE_A, r));
+        for (int f = file_of(sq) + 1; f <= FILE_H; ++f)
+            er |= lookups::file_mask(get_sq(f, RANK_1));
+        for (int f = file_of(sq) - 1; f >= FILE_A; --f)
+            wr |= lookups::file_mask(get_sq(f, RANK_1));
+
+        north_region_bb[sq] = nr;
+        south_region_bb[sq] = sr;
+        east_region_bb[sq] = er;
+        west_region_bb[sq] = wr;
+    }
+}
+
 namespace lookups
 {
     void init()
@@ -305,6 +330,7 @@ namespace lookups
         init_misc();
         init_keys();
         init_eval_masks();
+        init_regions();
     }
 
     u64 psq_key(int c, int pt, int sq) { return psq_keys_bb[c][pt][sq]; }
@@ -330,6 +356,10 @@ namespace lookups
     u64 northwest(int square) { return northwest_bb[square]; }
     u64 southeast(int square) { return southeast_bb[square]; }
     u64 southwest(int square) { return southwest_bb[square]; }
+    u64 north_region(int square) { return north_region_bb[square]; }
+    u64 south_region(int square) { return south_region_bb[square]; }
+    u64 east_region(int square) { return east_region_bb[square]; }
+    u64 west_region(int square) { return west_region_bb[square]; }
 
     u64 pawn(int square, int side) { return pawn_attacks[side][square]; }
     u64 knight(int square) { return knight_attacks[square]; }
