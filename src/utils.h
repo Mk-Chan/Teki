@@ -31,7 +31,7 @@ SOFTWARE.
 #include <vector>
 #include <algorithm>
 
-typedef std::uint64_t time_ms;
+typedef std::int64_t time_ms;
 
 namespace utils
 {
@@ -56,7 +56,7 @@ namespace utils
         return uni(rng);
     }
 
-    inline std::uint32_t rand_int(std::int32_t low_incl, std::int32_t high_incl)
+    inline std::int32_t rand_int(std::int32_t low_incl, std::int32_t high_incl)
     {
         std::mt19937 rng(curr_time());
         std::uniform_int_distribution<std::int32_t> uni(low_incl, high_incl);

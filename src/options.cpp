@@ -37,16 +37,16 @@ void syzygy_path_handler(std::string& s)
 
 namespace options
 {
-    std::unordered_map<std::string, SpinOption> spins = {
+    std::unordered_map<std::string, SpinOption> spins {
         { "Hash", { 1, 1, 1048576, [](int s) { tt.resize(s); } } },
         { "Threads", { 1, 1, MAX_THREADS, nullptr } },
         { "Contempt", { 20, -100, 100, nullptr } }
     };
-    std::unordered_map<std::string, CheckOption> checks = {
+    std::unordered_map<std::string, CheckOption> checks {
         { "UCI_Chess960", { castling::is_frc, [](bool b) { castling::is_frc = b; } } },
         { "Ponder", { allow_ponder, [](bool b) { allow_ponder = b; } } }
     };
-    std::unordered_map<std::string, StringOption> strings = {
+    std::unordered_map<std::string, StringOption> strings {
         { "SyzygyPath", { "None", { [](std::string s) { syzygy_path_handler(s); } } } }
     };
 }

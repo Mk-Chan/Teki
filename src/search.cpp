@@ -98,10 +98,10 @@ struct SearchGlobals
     int history[6][64];
 };
 
-SearchStack stacks[MAX_THREADS][MAX_PLY];
-SearchGlobals globals[MAX_THREADS];
-std::thread threads[MAX_THREADS];
-std::pair<int, bool> results[MAX_THREADS];
+static SearchStack stacks[MAX_THREADS][MAX_PLY];
+static SearchGlobals globals[MAX_THREADS];
+static std::thread threads[MAX_THREADS];
+static std::pair<int, bool> results[MAX_THREADS];
 
 inline int value_to_tt(int value, int ply)
 {
