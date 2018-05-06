@@ -803,7 +803,7 @@ std::pair<Move, Move> Position::best_move()
     bool failed;
     int result_index;
     int score = 0;
-    for (int depth = 1; depth < MAX_PLY; ++depth) {
+    for (int depth = 1; depth <= controller.max_ply; ++depth) {
         adelta = bdelta = 0;
         do {
             failed = false;

@@ -37,6 +37,7 @@ struct Controller
     volatile bool analyzing;
     volatile bool stop_search;
     bool limited_search;
+    int max_ply;
     std::vector<uint32_t> search_moves;
 };
 

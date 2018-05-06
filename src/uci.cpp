@@ -207,6 +207,7 @@ namespace handler
         controller.time_dependent = false;
         controller.limited_search = false;
         controller.analyzing = false;
+        controller.max_ply = MAX_PLY;
         controller.start_time = utils::curr_time();
         controller.end_time = controller.start_time;
         time_ms time_to_go = 1000;
@@ -271,6 +272,13 @@ namespace handler
             else if (word == "movestogo")
             {
                 stream >> moves_to_go;
+            }
+            else if (word == "depth")
+            {
+                controller.time_dependent = false;
+                int limited_depth;
+                if (stream >> limited_depth)
+                    controller.max_ply = limited_depth;
             }
         }
 
