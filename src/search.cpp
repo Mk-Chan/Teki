@@ -790,6 +790,7 @@ std::pair<Move, Move> Position::best_move()
 {
     STATS(
             all_nodes = 0;
+            search_nodes = 0;
             beta_cutoffs = 0;
             first_beta_cutoffs = 0;
          )

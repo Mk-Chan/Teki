@@ -40,7 +40,9 @@ enum TTConstants
 
     MOVE_MASK = 0x1fffff,
     FLAG_MASK = 0x3,
-    DEPTH_MASK = 0x7
+    DEPTH_MASK = 0x7,
+
+    CLUSTER_SIZE = 4
 };
 
 struct TTEntry
@@ -66,14 +68,45 @@ inline void TTEntry::set(std::uint64_t move, std::uint64_t flag,
                          std::uint64_t key)
 {
     data = move | (flag << FLAG_SHIFT) | (depth << DEPTH_SHIFT) | (score << SCORE_SHIFT);
-    this->key = key;
+    this->key = key ^ data;
 }
-inline std::uint64_t TTEntry::get_key() const { return key; }
+inline std::uint64_t TTEntry::get_key() const { return key ^ data; }
 inline std::uint32_t TTEntry::get_move() const { return std::uint32_t(data & MOVE_MASK); }
 inline int TTEntry::get_flag() const { return (data >> FLAG_SHIFT) & FLAG_MASK; }
 inline int TTEntry::get_depth() const { return (data >> DEPTH_SHIFT) & DEPTH_MASK; }
 inline int TTEntry::get_score() const { return int(data >> SCORE_SHIFT); }
 inline void TTEntry::clear() { key = data = 0; }
+
+struct TTCluster
+{
+    TTEntry& get_entry(std::uint64_t key);
+    void clear();
+
+private:
+    TTEntry entries[CLUSTER_SIZE];
+};
+
+inline TTEntry& TTCluster::get_entry(std::uint64_t key)
+{
+    // If any entry key matches, return it
+    for (TTEntry& entry : entries) {
+        if (entry.get_key() == key)
+            return entry;
+    }
+    // Otherwise, return entry with minimum depth in cluster
+    int min_depth_index = 0;
+    for (int i = 1; i < CLUSTER_SIZE; ++i) {
+        if (entries[i].get_depth() < entries[min_depth_index].get_depth())
+            min_depth_index = i;
+    }
+    return entries[min_depth_index];
+}
+
+inline void TTCluster::clear()
+{
+    for (TTEntry& entry : entries)
+        entry.clear();
+}
 
 struct TranspositionTable
 {
@@ -88,14 +121,14 @@ struct TranspositionTable
     int hash(std::uint64_t key) const;
 
 private:
-    TTEntry* table;
+    TTCluster* table;
     int size;
 };
 
 inline TranspositionTable::TranspositionTable()
 {
-    size = (1 << 20) / sizeof(TTEntry);
-    table = new TTEntry[size];
+    size = (1 << 20) / sizeof(TTCluster);
+    table = new TTCluster[size];
     clear();
 }
 
@@ -116,7 +149,7 @@ inline void TranspositionTable::resize(int MB)
 
     size = ((1 << 20) / sizeof(TTEntry)) * MB;
     delete[] table;
-    table = new TTEntry[size];
+    table = new TTCluster[size];
     clear();
 }
 
@@ -134,7 +167,7 @@ inline int TranspositionTable::hash(std::uint64_t key) const
 inline TTEntry TranspositionTable::probe(std::uint64_t key) const
 {
     int index = hash(key);
-    return table[index];
+    return table[index].get_entry(key);
 }
 
 inline void TranspositionTable::write(
@@ -143,7 +176,7 @@ inline void TranspositionTable::write(
         )
 {
     int index = hash(key);
-    table[index].set(move, flag, depth, score, key);
+    table[index].get_entry(key).set(move, flag, depth, score, key);
 }
 
 inline TranspositionTable tt;
