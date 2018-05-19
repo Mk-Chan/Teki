@@ -31,6 +31,12 @@ SOFTWARE.
 #include <cassert>
 #include <cinttypes>
 
+#ifdef DEBUG
+#define STATS(x) x
+#else
+#define STATS(x)
+#endif
+
 typedef std::uint64_t u64;
 typedef std::uint32_t u32;
 typedef std::uint8_t u8;

@@ -46,10 +46,10 @@ enum TTConstants
 struct TTEntry
 {
     TTEntry();
-    TTEntry(std::uint64_t move, std::uint64_t flag, std::uint64_t depth,
-            std::uint64_t score, std::uint64_t key);
     std::uint64_t get_key() const;
     std::uint32_t get_move() const;
+    void set(std::uint64_t move, std::uint64_t flag, std::uint64_t depth,
+             std::uint64_t score, std::uint64_t key);
     int get_flag() const;
     int get_depth() const;
     int get_score() const;
@@ -61,13 +61,14 @@ private:
 };
 
 inline TTEntry::TTEntry() {}
-inline TTEntry::TTEntry(std::uint64_t move, std::uint64_t flag, std::uint64_t depth,
-                        std::uint64_t score, std::uint64_t key)
+inline void TTEntry::set(std::uint64_t move, std::uint64_t flag,
+                         std::uint64_t depth, std::uint64_t score,
+                         std::uint64_t key)
 {
     data = move | (flag << FLAG_SHIFT) | (depth << DEPTH_SHIFT) | (score << SCORE_SHIFT);
-    this->key = key ^ data;
+    this->key = key;
 }
-inline std::uint64_t TTEntry::get_key() const { return key ^ data; }
+inline std::uint64_t TTEntry::get_key() const { return key; }
 inline std::uint32_t TTEntry::get_move() const { return std::uint32_t(data & MOVE_MASK); }
 inline int TTEntry::get_flag() const { return (data >> FLAG_SHIFT) & FLAG_MASK; }
 inline int TTEntry::get_depth() const { return (data >> DEPTH_SHIFT) & DEPTH_MASK; }
@@ -81,7 +82,8 @@ struct TranspositionTable
     TranspositionTable(int MB);
     void resize(int MB);
     TTEntry probe(std::uint64_t key) const;
-    void write(TTEntry entry);
+    void write(std::uint64_t move, std::uint64_t flag, std::uint64_t depth,
+               std::uint64_t score, std::uint64_t key);
     void clear();
     int hash(std::uint64_t key) const;
 
@@ -135,10 +137,13 @@ inline TTEntry TranspositionTable::probe(std::uint64_t key) const
     return table[index];
 }
 
-inline void TranspositionTable::write(const TTEntry entry)
+inline void TranspositionTable::write(
+        std::uint64_t move, std::uint64_t flag, std::uint64_t depth,
+        std::uint64_t score, std::uint64_t key
+        )
 {
-    int index = hash(entry.get_key());
-    table[index] = entry;
+    int index = hash(key);
+    table[index].set(move, flag, depth, score, key);
 }
 
 inline TranspositionTable tt;

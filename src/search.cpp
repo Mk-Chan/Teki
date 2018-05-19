@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 #include <thread>
+#include <atomic>
 
 #include "syzygy/tbprobe.h"
 #include "controller.h"
@@ -33,6 +34,14 @@ SOFTWARE.
 #include "utils.h"
 #include "uci.h"
 #include "tt.h"
+
+// Statistics
+STATS(
+        std::atomic<u64> beta_cutoffs;
+        std::atomic<u64> first_beta_cutoffs;
+        std::atomic<u64> all_nodes;
+        std::atomic<u64> search_nodes;
+        )
 
 namespace thread
 {
@@ -335,8 +344,7 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
         {
             ++sg.tb_hits;
             int d = std::min(depth + 6, MAX_PLY - 1);
-            TTEntry entry (0, FLAG_EXACT, d, tb_values[wdl], pos.get_hash_key());
-            tt.write(entry);
+            tt.write(0, FLAG_EXACT, d, tb_values[wdl], pos.get_hash_key());
             return tb_values[wdl];
         }
 	}
@@ -528,6 +536,10 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
 
                 if (value >= beta)
                 {
+                    STATS(
+                            ++beta_cutoffs;
+                            first_beta_cutoffs += (legal_moves == 1);
+                         )
                     // Update killer moves
                     if (quiet_move && move != ss->killer_move[0])
                     {
@@ -546,15 +558,17 @@ int search(Position& pos, SearchStack* const ss, SearchGlobals& sg,
             ? -MATE + ss->ply
             : -options::spins["Contempt"].value;
 
+    STATS(++search_nodes;)
+    STATS(all_nodes += (alpha == old_alpha);)
+
     // Transposition entry flag
     u64 flag = best_value >= beta ? FLAG_LOWER
         : best_value > old_alpha ? FLAG_EXACT
         : FLAG_UPPER;
 
     // Create a tt entry and store it
-    TTEntry entry(best_move, flag, depth, value_to_tt(best_value, ss->ply),
-                  pos.get_hash_key());
-    tt.write(entry);
+    tt.write(best_move, flag, depth, value_to_tt(best_value, ss->ply),
+             pos.get_hash_key());
 
     return best_value;
 }
@@ -746,9 +760,8 @@ int search_root(Position& pos, SearchStack* const ss, SearchGlobals& sg,
         : FLAG_UPPER;
 
     // Create a tt entry and store it
-    TTEntry entry(best_move, flag, depth, value_to_tt(best_value, ss->ply),
-                  pos.get_hash_key());
-    tt.write(entry);
+    tt.write(best_move, flag, depth, value_to_tt(best_value, ss->ply),
+             pos.get_hash_key());
 
     return best_value;
 }
@@ -775,6 +788,11 @@ void parallel_search(Position pos, int alpha, int beta, int depth, int threadnum
 
 std::pair<Move, Move> Position::best_move()
 {
+    STATS(
+            all_nodes = 0;
+            beta_cutoffs = 0;
+            first_beta_cutoffs = 0;
+         )
     constexpr int asp_delta[] = { 10, 30, 50, 100, 200, 300, INFINITY };
 
     int num_threads = options::spins["Threads"].value;
@@ -867,6 +885,14 @@ std::pair<Move, Move> Position::best_move()
                                ? UPPER_BOUND
                                : EXACT_BOUND;
             uci::print_search(score, depth, bound, time_passed, ss->pv, is_flipped());
+            STATS(
+                    std::cout << "info string";
+                    if (beta_cutoffs)
+                        std::cout << " first_beta_cutoff_rate: " << (first_beta_cutoffs / (double)beta_cutoffs);
+                    std::cout << " cut_nodes_rate: " << (beta_cutoffs / (double)search_nodes)
+                              << " all_nodes_rate: " << (all_nodes / (double)search_nodes)
+                              << std::endl;
+                 )
 
             // Failed low, decrease alpha and repeat
             if (score <= alpha)

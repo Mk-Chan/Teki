@@ -12,10 +12,14 @@ BINDIR = /usr/local/bin
 
 EXE = teki
 
+ifeq ($(BUILD),stats)
+	CXXFLAGS += -O3 -DDEBUG
+else
 ifeq ($(BUILD),debug)
 	CXXFLAGS += -g -fno-omit-frame-pointer
 else
 	CXXFLAGS += -O3 -DNDEBUG
+endif
 endif
 
 all: $(EXE)
