@@ -42,4 +42,21 @@ struct Controller
 
 inline Controller controller;
 
+inline bool stopped()
+{
+    if (controller.stop_search)
+        return true;
+
+    if (controller.time_dependent)
+    {
+        time_ms curr_time = utils::curr_time();
+        if (curr_time >= controller.end_time)
+            return true;
+        if (controller.end_time - curr_time <= 10)
+            return true;
+    }
+
+    return false;
+}
+
 #endif

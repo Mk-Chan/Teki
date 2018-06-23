@@ -31,7 +31,8 @@ SOFTWARE.
 class Node
 {
 public:
-    Node(Position& pos) : pos(pos), simulations(0), wins(0), move(0), expanded(false) {}
+    Node(Position& pos) : pos(pos), simulations(0), wins(0), move(0), expanded(false),
+                          result(-2) {}
     void set_move(Move move) { this->move = move; }
     Move get_move() { return move; }
     std::vector<Node>& get_children() { return children; }
@@ -44,6 +45,7 @@ public:
     void generate_children() { pos.generate_legal_movelist(mlist); }
     std::vector<Move> get_mlist() { return mlist; }
     void remove_latest_child() { children.pop_back(); }
+    int get_result() { return result; }
 
     bool fully_expanded();
     bool not_expanded();
@@ -65,6 +67,7 @@ private:
     u64 wins;
     Move move;
     bool expanded;
+    int result;
 };
 
 class GameTree

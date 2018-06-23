@@ -28,6 +28,7 @@ SOFTWARE.
 #include "mcts.h"
 #include "move.h"
 #include "options.h"
+#include "controller.h"
 
 Move Node::next_move()
 {
@@ -60,49 +61,6 @@ Node& Node::expand()
     Node& latest_child = children.back();
     latest_child.set_move(move);
     return latest_child;
-}
-
-int Node::simulate(int stm)
-{
-    ++simulations;
-    Position pos = this->pos;
-    int original_stm = stm;
-
-    std::vector<Move> local_mlist;
-    local_mlist.reserve(256);
-    bool first = true;
-    while (true) {
-        if (pos.is_drawn())
-            return 0;
-
-        // Generate moves for position
-        std::vector<Move>& temp_mlist = local_mlist;
-        temp_mlist.clear();
-        pos.generate_legal_movelist(temp_mlist);
-        if (temp_mlist.empty())
-            break;
-
-        // Play a random move
-        int r = utils::rand_int(0, temp_mlist.size() - 1);
-        Move& move = temp_mlist[r];
-        pos.make_move(move);
-        stm = !stm;
-        first = false;
-    }
-
-    // Special case: there was no move available for the node to simulate,
-    // remove it from the tree
-    if (first)
-        return -2;
-
-    // Return 0 for a draw
-    if (!pos.checkers_to(US))
-        return 0;
-
-    int result = stm == original_stm ? 1 : -1;
-    if (result == 1)
-        wins += result;
-    return result;
 }
 
 template <bool pv>
@@ -171,43 +129,104 @@ std::vector<Move> GameTree::pv()
     return pv;
 }
 
+int Node::simulate(int original_stm)
+{
+    ++simulations;
+    Position pos = this->pos;
+    int terminal_stm = original_stm;
+
+    std::vector<Move> local_mlist;
+    local_mlist.reserve(256);
+    bool first = true;
+    int depth = 0;
+    while (true) {
+        if (pos.is_drawn())
+            return 0;
+
+        // Generate moves for position
+        std::vector<Move>& temp_mlist = local_mlist;
+        temp_mlist.clear();
+        pos.generate_legal_movelist(temp_mlist);
+        if (temp_mlist.empty())
+            break;
+
+        // Play a random move
+        int r = utils::rand_int(0, temp_mlist.size() - 1);
+        Move& move = temp_mlist[r];
+        pos.make_move(move);
+        terminal_stm = !terminal_stm;
+        first = false;
+        ++depth;
+    }
+
+    // Return 0 for a draw
+    int result;
+    if (!pos.checkers_to(US))
+    {
+        result = 0;
+    }
+    else
+    {
+        int curr_stm = this->pos.is_flipped() ? 1 : 0;
+        if ((terminal_stm == original_stm) ^ (curr_stm == original_stm))
+        {
+            result = 1;
+            wins += 1;
+        }
+        else
+        {
+            result = -1;
+        }
+    }
+
+    if (first)
+        this->result = result;
+    return result;
+}
+
 void GameTree::search()
 {
     std::vector<std::reference_wrapper<Node>> parents;
-    auto curr = select(root, parents);
     time_ms start_time = utils::curr_time();
     time_ms prev_print_time = start_time;
-    int stm = root.get_position().is_flipped() ? 1 : 0;
+    bool root_flipped = root.get_position().is_flipped();
+    int stm = root_flipped ? 1 : 0;
 
-    while (true) {
-        while (!curr.get().fully_expanded()) {
-            Node& child = curr.get().expand();
-
-            int result = child.simulate(stm);
-            if (result == -2)
-            {
-                curr.get().remove_latest_child();
-                continue;
-            }
-            else if (result == -1)
-            {
-                curr.get().inc_wins();
-            }
-            curr.get().inc_simulations();
-            backprop(parents, result);
+    while (!stopped()) {
+        auto curr = select(root, parents);
+        int curr_result = curr.get().get_result();
+        if (curr_result != -2)
+        {
+            backprop(parents, curr_result);
         }
-        curr = select(root, parents);
+        else
+        {
+            while (!curr.get().fully_expanded()) {
+                Node& child = curr.get().expand();
+
+                int result = child.simulate(stm);
+                if (result == -1)
+                {
+                    curr.get().inc_wins();
+                }
+                curr.get().inc_simulations();
+                backprop(parents, result);
+            }
+        }
         time_ms now = utils::curr_time();
         if (now - prev_print_time >= 1000)
         {
             std::vector<Move> pv = this->pv();
             std::cout << "info cp " << root.score<true>(0)
-                      << " nodes " << root.get_simulations()
-                      << " time " << now - start_time
-                      << " nps " << root.get_simulations() * 1000 / (now - start_time)
-                      << " pv " << uci::get_pv_string(pv, root.get_position().is_flipped())
-                      << std::endl;
+                    << " nodes " << root.get_simulations()
+                    << " time " << now - start_time
+                    << " nps " << root.get_simulations() * 1000 / (now - start_time)
+                    << " pv " << uci::get_pv_string(pv, root_flipped)
+                    << std::endl;
             prev_print_time = now;
         }
     }
+
+    Move best_move = root.next_child<true>(0).get_move();
+    std::cout << "bestmove " << get_move_string(best_move, root_flipped) << std::endl;
 }

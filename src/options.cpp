@@ -44,7 +44,8 @@ namespace options
     };
     std::unordered_map<std::string, CheckOption> checks {
         { "UCI_Chess960", { castling::is_frc, [](bool b) { castling::is_frc = b; } } },
-        { "Ponder", { allow_ponder, [](bool b) { allow_ponder = b; } } }
+        { "Ponder", { allow_ponder, [](bool b) { allow_ponder = b; } } },
+        { "MCTS", { mcts, [](bool b) { mcts = b; } } }
     };
     std::unordered_map<std::string, StringOption> strings {
         { "SyzygyPath", { "None", { [](std::string s) { syzygy_path_handler(s); } } } }

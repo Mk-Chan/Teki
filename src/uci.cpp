@@ -202,9 +202,6 @@ namespace handler
 
     void go(Position& pos, std::stringstream& stream)
     {
-        GameTree gt {pos};
-        gt.search();
-        return;
         std::string word;
         controller.stop_search = false;
         controller.time_dependent = false;
@@ -289,15 +286,23 @@ namespace handler
         {
             searching = true;
             std::thread search_thread([&pos]() {
-                auto bestmove = pos.best_move();
-                std::cout << "bestmove "
-                          << get_move_string(bestmove.first, pos.is_flipped());
-                if (allow_ponder && bestmove.second)
+                if (mcts)
                 {
-                    std::cout << " ponder "
-                              << get_move_string(bestmove.second, !pos.is_flipped());
+                    GameTree gt {pos};
+                    gt.search();
                 }
-                std::cout << std::endl;
+                else
+                {
+                    auto bestmove = pos.best_move();
+                    std::cout << "bestmove "
+                              << get_move_string(bestmove.first, pos.is_flipped());
+                    if (allow_ponder && bestmove.second)
+                    {
+                        std::cout << " ponder "
+                                  << get_move_string(bestmove.second, !pos.is_flipped());
+                    }
+                    std::cout << std::endl;
+                }
                 searching = false;
             });
             search_thread.detach();

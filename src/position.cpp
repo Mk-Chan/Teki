@@ -454,12 +454,12 @@ bool Position::is_drawn() const
     int num_pieces = popcnt(occupancy_bb());
     if (num_pieces == 2)
         return true;
-    if (num_pieces == 3)
+    else if (num_pieces == 3)
     {
         if (piece_bb(KNIGHT) || piece_bb(BISHOP))
             return true;
     }
-    if (num_pieces == 4)
+    else if (num_pieces == 4)
     {
         if (popcnt(piece_bb(KNIGHT)) == 2)
             return true;

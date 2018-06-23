@@ -41,6 +41,7 @@ namespace castling
 }
 
 inline bool allow_ponder = true;
+inline bool mcts = false;
 
 class Position
 {

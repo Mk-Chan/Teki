@@ -121,23 +121,6 @@ inline int value_from_tt(int value, int ply)
     return value;
 }
 
-inline bool stopped()
-{
-    if (controller.stop_search)
-        return true;
-
-    if (controller.time_dependent)
-    {
-        time_ms curr_time = utils::curr_time();
-        if (curr_time >= controller.end_time)
-            return true;
-        if (controller.end_time - curr_time <= 10)
-            return true;
-    }
-
-    return false;
-}
-
 void reorder_moves(const Position& pos, SearchStack* ss, SearchGlobals& sg,
                    Move tt_move=0)
 {
