@@ -20,7 +20,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -DNDEBUG")
 find_package(Threads)
 
 add_executable(teki main.cpp uci.cpp lookups.cpp position.cpp movegen.cpp
-                     move.cpp search.cpp evaluate.cpp options.cpp
+                     move.cpp search.cpp evaluate.cpp options.cpp mcts.cpp
                      syzygy/tbprobe.c)
 
 target_link_libraries(teki "${CMAKE_THREAD_LIBS_INIT}")
