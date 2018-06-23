@@ -78,10 +78,12 @@ public:
     void generate_in_check_movelist(std::vector<Move>& mlist) const;
     void generate_movelist(std::vector<Move>& mlist) const;
     void generate_quiesce_movelist(std::vector<Move>& mlist) const;
+    void generate_legal_movelist(std::vector<Move>& mlist) const;
     bool is_repetition() const;
     bool legal_move(Move move) const;
     Move smallest_capture_move(int sq) const;
     int see(int sq) const;
+    bool is_drawn() const;
 
     // Operations
     void flip();

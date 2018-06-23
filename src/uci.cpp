@@ -29,6 +29,7 @@ SOFTWARE.
 
 #include "tt.h"
 #include "uci.h"
+#include "mcts.h"
 #include "options.h"
 #include "position.h"
 #include "controller.h"
@@ -47,17 +48,6 @@ Move get_parsed_move(Position& pos, std::string& move_str)
     }
     std::cout << "CANNOT PARSE MOVE " << move_str << "!" << std::endl;
     return 0;
-}
-
-std::string get_pv_string(std::vector<Move>& pv, bool flipped)
-{
-    std::string pv_string = "";
-    for (unsigned i = 0; i < pv.size(); ++i, flipped = !flipped) {
-        pv_string += get_move_string(pv[i], flipped);
-        if (i != pv.size() - 1)
-            pv_string += " ";
-    }
-    return pv_string;
 }
 
 namespace handler
@@ -212,6 +202,9 @@ namespace handler
 
     void go(Position& pos, std::stringstream& stream)
     {
+        GameTree gt {pos};
+        gt.search();
+        return;
         std::string word;
         controller.stop_search = false;
         controller.time_dependent = false;
@@ -396,5 +389,16 @@ namespace uci
             std::cout << " nps " << (controller.nodes_searched * 1000) / time;
         std::cout << " pv " << get_pv_string(pv, flipped);
         std::cout << std::endl;
+    }
+
+    std::string get_pv_string(std::vector<Move>& pv, bool flipped)
+    {
+        std::string pv_string = "";
+        for (unsigned i = 0; i < pv.size(); ++i, flipped = !flipped) {
+            pv_string += get_move_string(pv[i], flipped);
+            if (i != pv.size() - 1)
+                pv_string += " ";
+        }
+        return pv_string;
     }
 }

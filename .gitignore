@@ -5,11 +5,13 @@
 teki
 teki_new
 teki_old
+*.exe
 
 # Folders
 exes
 build
 release
+.vscode
 
 # Misc. files
 .ycm_extra_conf.py

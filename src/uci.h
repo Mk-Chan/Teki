@@ -41,6 +41,7 @@ namespace uci
                                bool flipped);
     extern void print_search(int score, int depth, int bound, time_ms time,
                              std::vector<Move>& pv, bool flipped);
+    extern std::string get_pv_string(std::vector<Move>& pv, bool flipped);
 }
 
 #endif

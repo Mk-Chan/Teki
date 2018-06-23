@@ -368,12 +368,8 @@ u64 Position::perft(int depth, bool root) const
     if (depth == 0)
         return u64(1);
 
-    bool in_check = this->checkers_to(US);
     std::vector<Move> mlist;
-    if (in_check)
-        this->generate_in_check_movelist(mlist);
-    else
-        this->generate_movelist(mlist);
+    generate_legal_movelist(mlist);
 
     u64 leaves = u64(0);
     for (Move move : mlist) {
@@ -449,4 +445,33 @@ int Position::see(int sq) const
         return std::max(0, piece_val - pos.see(sq ^ 56));
     }
     return 0;
+}
+
+bool Position::is_drawn() const
+{
+    if (get_half_moves() > 99 || is_repetition())
+        return true;
+    int num_pieces = popcnt(occupancy_bb());
+    if (num_pieces == 2)
+        return true;
+    if (num_pieces == 3)
+    {
+        if (piece_bb(KNIGHT) || piece_bb(BISHOP))
+            return true;
+    }
+    if (num_pieces == 4)
+    {
+        if (popcnt(piece_bb(KNIGHT)) == 2)
+            return true;
+
+        int num_us = popcnt(color_bb(US));
+        int num_them = popcnt(color_bb(THEM));
+        if (num_us == num_them)
+            return true;
+        else if (popcnt(piece_bb(BISHOP)) == 2)
+            return false;
+        else
+            return true;
+    }
+    return false;
 }

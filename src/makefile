@@ -6,7 +6,7 @@ CXXFLAGS = -std=c++17 -Wall -pipe $(EXTRACXXFLAGS) -DNAME=$(UCI_NAME)
 LDFLAGS = -pthread -Wl,--no-as-needed $(CXXFLAGS) $(EXTRALDFLAGS)
 
 OBJS = main.o uci.o lookups.o position.o movegen.o move.o search.o\
-       evaluate.o options.o tbprobe.o
+       evaluate.o options.o tbprobe.o mcts.o
 
 BINDIR = /usr/local/bin
 

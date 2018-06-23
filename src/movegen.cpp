@@ -22,8 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "position.h"
 #include "move.h"
+#include "position.h"
 #include "lookups.h"
 
 static inline void add_move(int move, std::vector<Move>& mlist)
@@ -346,4 +346,18 @@ void Position::generate_movelist(std::vector<Move>& mlist) const
     gen_castling(pos, mlist);
     gen_piece_quiets(pos, mlist);
     gen_pawn_quiets(pos, mlist);
+}
+
+void Position::generate_legal_movelist(std::vector<Move>& mlist) const
+{
+    if (checkers_to(US))
+        generate_in_check_movelist(mlist);
+    else
+        generate_movelist(mlist);
+    for (std::size_t i = 0; i < mlist.size();) {
+        if (!legal_move(mlist[i]))
+            mlist.erase(mlist.begin() + i);
+        else
+            ++i;
+    }
 }
