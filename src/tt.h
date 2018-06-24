@@ -147,7 +147,7 @@ inline void TranspositionTable::resize(int MB)
     if (MB <= 0)
         MB = 1;
 
-    size = ((1 << 20) / sizeof(TTEntry)) * MB;
+    size = ((1 << 20) / sizeof(TTCluster)) * MB;
     delete[] table;
     table = new TTCluster[size];
     clear();
