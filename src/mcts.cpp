@@ -135,7 +135,6 @@ int Node::simulate(int original_stm)
     Position pos = this->pos;
 
     int terminal_stm = original_stm;
-    int curr_eval = pos.evaluate();
 
     std::vector<Move> local_mlist;
     local_mlist.reserve(256);
@@ -152,20 +151,6 @@ int Node::simulate(int original_stm)
         pos.generate_legal_movelist(temp_mlist);
         if (temp_mlist.empty())
             break;
-
-        if (!first && std::abs(curr_eval) < 400)
-        {
-            int eval_diff = pos.evaluate() - curr_eval;
-            if (std::abs(eval_diff) > 50)
-            {
-                if (terminal_stm != original_stm)
-                    eval_diff = -eval_diff;
-                result = eval_diff > 0 ? -1 : 1;
-                if (result == 1)
-                    ++wins;
-                return result;
-            }
-        }
 
         // Play a random move
         int r = utils::rand_int(0, temp_mlist.size() - 1);
