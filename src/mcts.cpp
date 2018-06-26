@@ -133,12 +133,15 @@ int Node::simulate(int original_stm)
 {
     ++simulations;
     Position pos = this->pos;
+
     int terminal_stm = original_stm;
+    int curr_eval = pos.evaluate();
 
     std::vector<Move> local_mlist;
     local_mlist.reserve(256);
     bool first = true;
     int depth = 0;
+    int result;
     while (true) {
         if (pos.is_drawn())
             return 0;
@@ -150,6 +153,20 @@ int Node::simulate(int original_stm)
         if (temp_mlist.empty())
             break;
 
+        if (!first && std::abs(curr_eval) < 400)
+        {
+            int eval_diff = pos.evaluate() - curr_eval;
+            if (std::abs(eval_diff) > 50)
+            {
+                if (terminal_stm != original_stm)
+                    eval_diff = -eval_diff;
+                result = eval_diff > 0 ? -1 : 1;
+                if (result == 1)
+                    ++wins;
+                return result;
+            }
+        }
+
         // Play a random move
         int r = utils::rand_int(0, temp_mlist.size() - 1);
         Move& move = temp_mlist[r];
@@ -160,7 +177,6 @@ int Node::simulate(int original_stm)
     }
 
     // Return 0 for a draw
-    int result;
     if (!pos.checkers_to(US))
     {
         result = 0;
@@ -171,7 +187,7 @@ int Node::simulate(int original_stm)
         if ((terminal_stm == original_stm) ^ (curr_stm == original_stm))
         {
             result = 1;
-            wins += 1;
+            ++wins;
         }
         else
         {
@@ -179,8 +195,7 @@ int Node::simulate(int original_stm)
         }
     }
 
-    if (first)
-        this->result = result;
+    this->result = first ? 2 : result;
     return result;
 }
 
@@ -195,7 +210,7 @@ void GameTree::search()
     while (!stopped()) {
         auto curr = select(root, parents);
         int curr_result = curr.get().get_result();
-        if (curr_result != -2)
+        if (curr_result == 2)
         {
             backprop(parents, curr_result);
         }
