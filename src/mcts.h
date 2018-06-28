@@ -28,11 +28,17 @@ SOFTWARE.
 #include "utils.h"
 #include "position.h"
 
+enum ResultType
+{
+    PENDING, DRAW, WIN, LOSS,
+    TERMINAL
+};
+
 class Node
 {
 public:
-    Node(Position& pos) : pos(pos), simulations(0), wins(0), move(0), expanded(false),
-                          result(-2) {}
+    Node(Position& pos) : pos(pos), simulations(0), wins(0), move(0),
+                          expanded(false), result(PENDING) {}
     void set_move(Move move) { this->move = move; }
     Move get_move() { return move; }
     std::vector<Node>& get_children() { return children; }
@@ -46,16 +52,19 @@ public:
     std::vector<Move> get_mlist() { return mlist; }
     void remove_latest_child() { children.pop_back(); }
     int get_result() { return result; }
+    Node* latest_child() { return &children.back(); }
 
     bool fully_expanded();
-    bool not_expanded();
-    void search();
-    Node& expand();
+    bool leaf_node();
+    void expand();
+
+    double value_score();
+    double selection_score(u64);
+
+    Node* best_child();
+    Node* select_child();
+
     int simulate(int);
-    template <bool pv>
-    double score(u64);
-    template <bool pv>
-    Node& next_child(u64);
 
 private:
     Move next_move();
@@ -74,7 +83,7 @@ class GameTree
 {
 public:
     GameTree(Position& pos) : root(pos) {}
-    std::reference_wrapper<Node> select(Node&, std::vector<std::reference_wrapper<Node>>&);
+    std::pair<Node*, std::vector<Node*>> select();
     std::vector<Move> pv();
     void search();
 

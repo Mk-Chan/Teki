@@ -42,91 +42,64 @@ bool Node::fully_expanded()
     return expanded && mlist.empty();
 }
 
-bool Node::not_expanded()
+bool Node::leaf_node()
 {
     return !expanded;
 }
 
-Node& Node::expand()
+void Node::expand()
 {
-    if (!expanded) {
-        if (mlist.empty())
-            generate_children();
+    if (leaf_node()) {
+        assert(mlist.empty());
+        generate_children();
         expanded = true;
     }
-    Position p {pos};
+    Position p = pos;
     Move move = next_move();
     p.make_move(move);
     children.emplace_back(p);
-    Node& latest_child = children.back();
-    latest_child.set_move(move);
-    return latest_child;
+    children.back().set_move(move);
 }
 
-template <bool pv>
-double Node::score(u64 total_simulations)
+double Node::value_score()
 {
-    if constexpr (pv)
-    {
-        return double(wins) / double(simulations);
-    }
-    else
-    {
-        return double(wins) / double(simulations) +
-               std::sqrt(2 * std::log(double(total_simulations)) / double(simulations));
-    }
+    return double(wins) / double(simulations);
 }
 
-template <bool pv>
-Node& Node::next_child(u64 total_simulations)
+double Node::selection_score(u64 parent_simulations)
+{
+    return double(wins) / double(simulations) +
+            std::sqrt(2 * std::log(double(parent_simulations)) / double(simulations));
+}
+
+Node* Node::best_child()
 {
     int best_index = 0;
-    double best_score = children[best_index].score<pv>(total_simulations);
+    double best_score = children[best_index].value_score();
     for (std::size_t i = 1; i < children.size(); ++i) {
-        double score = children[i].score<pv>(total_simulations);
+        double score = children[i].value_score();
         if (score > best_score)
         {
             best_score = score;
             best_index = i;
         }
     }
-    return children[best_index];
+    return &children[best_index];
 }
 
-std::reference_wrapper<Node> GameTree::select(Node& root, std::vector<std::reference_wrapper<Node>>& parents)
+Node* Node::select_child()
 {
-    parents.clear();
-    auto curr = std::ref(root);
-    while (true) {
-        if (curr.get().not_expanded())
-            return curr;
-
-        parents.push_back(curr);
-        curr = curr.get().next_child<false>(root.get_simulations());
+    int best_index = 0;
+    double best_score = children[best_index].selection_score(simulations);
+    for (std::size_t i = 1; i < children.size(); ++i) {
+        double score = children[i].selection_score(simulations);
+        if (score > best_score)
+        {
+            best_score = score;
+            best_index = i;
+        }
     }
-}
-
-void backprop(std::vector<std::reference_wrapper<Node>>& parents, int result)
-{
-    int flipper = 1;
-    for (int i = parents.size()-1; i >= 0; --i) {
-        auto parent = parents[i];
-        parent.get().inc_simulations();
-        if (result * flipper == 1)
-            parent.get().inc_wins();
-        flipper = -flipper;
-    }
-}
-
-std::vector<Move> GameTree::pv()
-{
-    std::vector<Move> pv;
-    auto curr = std::ref(root);
-    while (curr.get().fully_expanded()) {
-        curr = curr.get().next_child<true>(0);
-        pv.push_back(curr.get().get_move());
-    }
-    return pv;
+    return &children[best_index];
 }
 
 int Node::simulate(int original_stm)
@@ -143,18 +116,17 @@ int Node::simulate(int original_stm)
     int result;
     while (true) {
         if (pos.is_drawn())
-            return 0;
+            return DRAW;
 
         // Generate moves for position
-        std::vector<Move>& temp_mlist = local_mlist;
-        temp_mlist.clear();
-        pos.generate_legal_movelist(temp_mlist);
-        if (temp_mlist.empty())
+        local_mlist.clear();
+        pos.generate_legal_movelist(local_mlist);
+        if (local_mlist.empty())
             break;
 
         // Play a random move
-        int r = utils::rand_int(0, temp_mlist.size() - 1);
-        Move& move = temp_mlist[r];
+        int r = utils::rand_int(0, local_mlist.size() - 1);
+        Move& move = local_mlist[r];
         pos.make_move(move);
         terminal_stm = !terminal_stm;
         first = false;
@@ -164,52 +136,93 @@ int Node::simulate(int original_stm)
     // Return 0 for a draw
     if (!pos.checkers_to(US))
     {
-        result = 0;
+        result = DRAW;
     }
     else
     {
         int curr_stm = this->pos.is_flipped() ? 1 : 0;
         if ((terminal_stm == original_stm) ^ (curr_stm == original_stm))
         {
-            result = 1;
+            result = WIN;
             ++wins;
         }
         else
         {
-            result = -1;
+            result = LOSS;
         }
     }
 
-    this->result = first ? 2 : result;
+    if (first)
+        this->result = TERMINAL;
+
     return result;
+}
+
+std::pair<Node*, std::vector<Node*>> GameTree::select()
+{
+    std::vector<Node*> parents;
+    Node* curr = &root;
+    while (curr->fully_expanded()) {
+        parents.push_back(curr);
+        curr = curr->select_child();
+    }
+    return {curr, parents};
+}
+
+void backprop(const std::vector<Node*>& parents, int result)
+{
+    int flipper = 1;
+    for (int i = parents.size()-1; i >= 0; --i) {
+        Node* parent = parents[i];
+        parent->inc_simulations();
+        if (result * flipper == 1)
+            parent->inc_wins();
+        flipper = -flipper;
+    }
+}
+
+std::vector<Move> GameTree::pv()
+{
+    std::vector<Move> pv;
+    Node* curr = &root;
+    while (!curr->leaf_node()) {
+        curr = curr->best_child();
+        pv.push_back(curr->get_move());
+    }
+    return pv;
 }
 
 void GameTree::search()
 {
-    std::vector<std::reference_wrapper<Node>> parents;
     time_ms start_time = utils::curr_time();
     time_ms prev_print_time = start_time;
     bool root_flipped = root.get_position().is_flipped();
     int stm = root_flipped ? 1 : 0;
 
     while (!stopped()) {
-        auto curr = select(root, parents);
-        int curr_result = curr.get().get_result();
-        if (curr_result == 2)
+        auto selection = select();
+        auto& [curr, parents] = selection;
+        int curr_result = curr->get_result();
+        if (curr_result == TERMINAL)
         {
-            backprop(parents, curr_result);
+            backprop(parents, 1);
         }
         else
         {
-            while (!curr.get().fully_expanded()) {
-                Node& child = curr.get().expand();
+            if (curr_result != PENDING)
+            {
+                log(curr_result);
+                curr->display();
+            }
+            assert(curr_result == PENDING);
+            while (!curr->fully_expanded()) {
+                curr->expand();
+                Node* child = curr->latest_child();
 
-                int result = child.simulate(stm);
+                int result = child->simulate(stm);
                 if (result == -1)
-                {
-                    curr.get().inc_wins();
-                }
-                curr.get().inc_simulations();
+                    curr->inc_wins();
+                curr->inc_simulations();
                 backprop(parents, result);
             }
         }
@@ -217,7 +230,7 @@ void GameTree::search()
         if (now - prev_print_time >= 1000)
         {
             std::vector<Move> pv = this->pv();
-            std::cout << "info cp " << root.score<true>(0)
+            std::cout << "info cp " << root.value_score()
                     << " nodes " << root.get_simulations()
                     << " time " << now - start_time
                     << " nps " << root.get_simulations() * 1000 / (now - start_time)
@@ -227,6 +240,6 @@ void GameTree::search()
         }
     }
 
-    Move best_move = root.next_child<true>(0).get_move();
+    Move best_move = root.best_child()->get_move();
     std::cout << "bestmove " << get_move_string(best_move, root_flipped) << std::endl;
 }
