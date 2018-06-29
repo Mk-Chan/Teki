@@ -47,11 +47,12 @@ bool Node::leaf_node()
     return !expanded;
 }
 
-void Node::expand()
+bool Node::expand()
 {
     if (leaf_node()) {
-        assert(mlist.empty());
-        generate_children();
+        generate_moves();
+        if (mlist.empty())
+            return false;
         expanded = true;
     }
     Position p = pos;
@@ -59,6 +60,7 @@ void Node::expand()
     p.make_move(move);
     children.emplace_back(p);
     children.back().set_move(move);
+    return true;
 }
 
 double Node::value_score()
@@ -111,9 +113,7 @@ int Node::simulate(int original_stm)
 
     std::vector<Move> local_mlist;
     local_mlist.reserve(256);
-    bool first = true;
     int depth = 0;
-    int result;
     while (true) {
         if (pos.is_drawn())
             return DRAW;
@@ -129,11 +129,10 @@ int Node::simulate(int original_stm)
         Move& move = local_mlist[r];
         pos.make_move(move);
         terminal_stm = !terminal_stm;
-        first = false;
         ++depth;
     }
 
-    // Return 0 for a draw
+    int result;
     if (!pos.checkers_to(US))
     {
         result = DRAW;
@@ -152,9 +151,6 @@ int Node::simulate(int original_stm)
         }
     }
 
-    if (first)
-        this->result = TERMINAL;
-
     return result;
 }
 
@@ -171,13 +167,14 @@ std::pair<Node*, std::vector<Node*>> GameTree::select()
 
 void backprop(const std::vector<Node*>& parents, int result)
 {
-    int flipper = 1;
+    bool flipper = false;
     for (int i = parents.size()-1; i >= 0; --i) {
         Node* parent = parents[i];
         parent->inc_simulations();
-        if (result * flipper == 1)
+        if (   (flipper && result == LOSS)
+            || (!flipper && result == WIN))
             parent->inc_wins();
-        flipper = -flipper;
+        flipper = !flipper;
     }
 }
 
@@ -202,26 +199,22 @@ void GameTree::search()
     while (!stopped()) {
         auto selection = select();
         auto& [curr, parents] = selection;
-        int curr_result = curr->get_result();
-        if (curr_result == TERMINAL)
-        {
-            backprop(parents, 1);
-        }
-        else
-        {
-            if (curr_result != PENDING)
+        while (!curr->fully_expanded()) {
+            if (!curr->expand())
             {
-                log(curr_result);
-                curr->display();
+                curr->inc_simulations();
+                int result = curr->get_position().checkers_to(US) ? WIN : DRAW;
+                backprop(parents, result);
+                break;
             }
-            assert(curr_result == PENDING);
-            while (!curr->fully_expanded()) {
-                curr->expand();
+            else
+            {
                 Node* child = curr->latest_child();
-
                 int result = child->simulate(stm);
-                if (result == -1)
+
+                if (result == LOSS)
                     curr->inc_wins();
+
                 curr->inc_simulations();
                 backprop(parents, result);
             }

@@ -38,7 +38,7 @@ class Node
 {
 public:
     Node(Position& pos) : pos(pos), simulations(0), wins(0), move(0),
-                          expanded(false), result(PENDING) {}
+                          expanded(false) {}
     void set_move(Move move) { this->move = move; }
     Move get_move() { return move; }
     std::vector<Node>& get_children() { return children; }
@@ -48,15 +48,14 @@ public:
     void inc_wins() { ++wins; }
     void display() { pos.display(); }
     Position& get_position() { return pos; }
-    void generate_children() { pos.generate_legal_movelist(mlist); }
+    void generate_moves() { pos.generate_legal_movelist(mlist); }
     std::vector<Move> get_mlist() { return mlist; }
     void remove_latest_child() { children.pop_back(); }
-    int get_result() { return result; }
     Node* latest_child() { return &children.back(); }
 
     bool fully_expanded();
     bool leaf_node();
-    void expand();
+    bool expand();
 
     double value_score();
     double selection_score(u64);
@@ -76,7 +75,6 @@ private:
     u64 wins;
     Move move;
     bool expanded;
-    int result;
 };
 
 class GameTree
