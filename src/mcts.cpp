@@ -67,7 +67,7 @@ Node* Node::expand()
 template <>
 double Node::score<VALUE>(u64 parent_simulations)
 {
-    return simulations;
+    return double(wins) / double(simulations);
 }
 
 template <>
@@ -196,7 +196,7 @@ void GameTree::search()
             Node* best_child = root.get_child<VALUE>();
             time_ms now = utils::curr_time();
             std::cout << "info"
-                << " cp " << 100.0 * best_child->get_wins() / double(best_child->get_simulations())
+                << " cp " << 100.0 * best_child->get_wins() / double(best_child->get_simulations()) << "%"
                 << " nodes " << root.get_simulations()
                 << " time " << now - start_time
                 << " nps " << root.get_simulations() * 1000 / (now - start_time)

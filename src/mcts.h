@@ -54,6 +54,7 @@ public:
     void generate_moves() { pos.generate_legal_movelist(mlist); }
     std::vector<Move> get_mlist() { return mlist; }
     Node* latest_child() { return &children.back(); }
+    bool flipped() { return pos.is_flipped(); }
 
     bool is_terminal();
     bool expanded();
