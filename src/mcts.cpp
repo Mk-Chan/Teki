@@ -37,49 +37,53 @@ Move Node::next_move()
     return m;
 }
 
-bool Node::fully_expanded()
+bool Node::is_terminal()
 {
-    return expanded && mlist.empty();
+    return mlist.empty() && children.empty();
 }
 
-bool Node::leaf_node()
+bool Node::expanded()
 {
-    return !expanded;
+    return !children.empty();
 }
 
-bool Node::expand()
+bool Node::has_moves()
 {
-    if (leaf_node()) {
-        generate_moves();
-        if (mlist.empty())
-            return false;
-        expanded = true;
-    }
+    return !mlist.empty();
+}
+
+Node* Node::expand()
+{
     Position p = pos;
     Move move = next_move();
     p.make_move(move);
-    children.emplace_back(p);
-    children.back().set_move(move);
-    return true;
+    Node child {p};
+    child.set_move(move);
+    child.generate_moves();
+    children.push_back(child);
+    return &children.back();
 }
 
-double Node::value_score()
+template <>
+double Node::score<VALUE>(u64 parent_simulations)
 {
-    return double(wins) / double(simulations);
+    return simulations;
 }
 
-double Node::selection_score(u64 parent_simulations)
+template <>
+double Node::score<SELECTION>(u64 parent_simulations)
 {
     return double(wins) / double(simulations) +
             std::sqrt(2 * std::log(double(parent_simulations)) / double(simulations));
 }
 
-Node* Node::best_child()
+template <Policy policy>
+Node* Node::get_child()
 {
-    int best_index = 0;
-    double best_score = children[best_index].value_score();
+    std::size_t best_index = 0;
+    double best_score = children[best_index].score<policy>(simulations);
     for (std::size_t i = 1; i < children.size(); ++i) {
-        double score = children[i].value_score();
+        double score = children[i].score<policy>(simulations);
         if (score > best_score)
         {
             best_score = score;
@@ -89,31 +93,12 @@ Node* Node::best_child()
     return &children[best_index];
 }
 
-Node* Node::select_child()
+int Node::simulate()
 {
-    int best_index = 0;
-    double best_score = children[best_index].selection_score(simulations);
-    for (std::size_t i = 1; i < children.size(); ++i) {
-        double score = children[i].selection_score(simulations);
-        if (score > best_score)
-        {
-            best_score = score;
-            best_index = i;
-        }
-    }
-    return &children[best_index];
-}
-
-int Node::simulate(int original_stm)
-{
-    ++simulations;
     Position pos = this->pos;
-
-    int terminal_stm = original_stm;
 
     std::vector<Move> local_mlist;
     local_mlist.reserve(256);
-    int depth = 0;
     while (true) {
         if (pos.is_drawn())
             return DRAW;
@@ -128,8 +113,6 @@ int Node::simulate(int original_stm)
         int r = utils::rand_int(0, local_mlist.size() - 1);
         Move& move = local_mlist[r];
         pos.make_move(move);
-        terminal_stm = !terminal_stm;
-        ++depth;
     }
 
     int result;
@@ -139,16 +122,10 @@ int Node::simulate(int original_stm)
     }
     else
     {
-        int curr_stm = this->pos.is_flipped() ? 1 : 0;
-        if ((terminal_stm == original_stm) ^ (curr_stm == original_stm))
-        {
-            result = WIN;
-            ++wins;
-        }
-        else
-        {
+        if (this->get_position().is_flipped() != pos.is_flipped())
             result = LOSS;
-        }
+        else
+            result = WIN;
     }
 
     return result;
@@ -158,22 +135,30 @@ std::pair<Node*, std::vector<Node*>> GameTree::select()
 {
     std::vector<Node*> parents;
     Node* curr = &root;
-    while (curr->fully_expanded()) {
+    while (!curr->is_terminal()) {
+        if (curr->has_moves())
+        {
+            parents.push_back(curr);
+            curr = curr->expand();
+            break;
+        }
         parents.push_back(curr);
-        curr = curr->select_child();
+        curr = curr->get_child<SELECTION>();
     }
     return {curr, parents};
 }
 
 void backprop(const std::vector<Node*>& parents, int result)
 {
-    bool flipper = false;
+    bool flipper = true;
     for (int i = parents.size()-1; i >= 0; --i) {
         Node* parent = parents[i];
         parent->inc_simulations();
         if (   (flipper && result == LOSS)
             || (!flipper && result == WIN))
+        {
             parent->inc_wins();
+        }
         flipper = !flipper;
     }
 }
@@ -182,8 +167,8 @@ std::vector<Move> GameTree::pv()
 {
     std::vector<Move> pv;
     Node* curr = &root;
-    while (!curr->leaf_node()) {
-        curr = curr->best_child();
+    while (curr->expanded()) {
+        curr = curr->get_child<VALUE>();
         pv.push_back(curr->get_move());
     }
     return pv;
@@ -192,47 +177,35 @@ std::vector<Move> GameTree::pv()
 void GameTree::search()
 {
     time_ms start_time = utils::curr_time();
-    time_ms prev_print_time = start_time;
     bool root_flipped = root.get_position().is_flipped();
-    int stm = root_flipped ? 1 : 0;
+    u64 prev_simulations = 0;
 
     while (!stopped()) {
         auto selection = select();
         auto& [curr, parents] = selection;
-        while (!curr->fully_expanded()) {
-            if (!curr->expand())
-            {
-                curr->inc_simulations();
-                int result = curr->get_position().checkers_to(US) ? WIN : DRAW;
-                backprop(parents, result);
-                break;
-            }
-            else
-            {
-                Node* child = curr->latest_child();
-                int result = child->simulate(stm);
 
-                if (result == LOSS)
-                    curr->inc_wins();
+        int result = curr->simulate();
+        if (result == WIN)
+            curr->inc_wins();
+        curr->inc_simulations();
+        backprop(parents, result);
 
-                curr->inc_simulations();
-                backprop(parents, result);
-            }
-        }
-        time_ms now = utils::curr_time();
-        if (now - prev_print_time >= 1000)
+        if (root.get_simulations() - prev_simulations >= 10000)
         {
             std::vector<Move> pv = this->pv();
-            std::cout << "info cp " << root.value_score()
-                    << " nodes " << root.get_simulations()
-                    << " time " << now - start_time
-                    << " nps " << root.get_simulations() * 1000 / (now - start_time)
-                    << " pv " << uci::get_pv_string(pv, root_flipped)
-                    << std::endl;
-            prev_print_time = now;
+            Node* best_child = root.get_child<VALUE>();
+            time_ms now = utils::curr_time();
+            std::cout << "info"
+                << " cp " << 100.0 * best_child->get_wins() / double(best_child->get_simulations())
+                << " nodes " << root.get_simulations()
+                << " time " << now - start_time
+                << " nps " << root.get_simulations() * 1000 / (now - start_time)
+                << " pv " << uci::get_pv_string(pv, root_flipped)
+                << std::endl;
+            prev_simulations = root.get_simulations();
         }
     }
 
-    Move best_move = root.best_child()->get_move();
+    Move best_move = root.get_child<VALUE>()->get_move();
     std::cout << "bestmove " << get_move_string(best_move, root_flipped) << std::endl;
 }

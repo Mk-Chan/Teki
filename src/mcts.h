@@ -30,15 +30,18 @@ SOFTWARE.
 
 enum ResultType
 {
-    PENDING, DRAW, WIN, LOSS,
-    TERMINAL
+    PENDING, DRAW, WIN, LOSS
+};
+
+enum Policy
+{
+    SELECTION, VALUE
 };
 
 class Node
 {
 public:
-    Node(Position& pos) : pos(pos), simulations(0), wins(0), move(0),
-                          expanded(false) {}
+    Node(Position& pos) : pos(pos), simulations(0), wins(0), move(0) { this->generate_moves();}
     void set_move(Move move) { this->move = move; }
     Move get_move() { return move; }
     std::vector<Node>& get_children() { return children; }
@@ -50,20 +53,19 @@ public:
     Position& get_position() { return pos; }
     void generate_moves() { pos.generate_legal_movelist(mlist); }
     std::vector<Move> get_mlist() { return mlist; }
-    void remove_latest_child() { children.pop_back(); }
     Node* latest_child() { return &children.back(); }
 
-    bool fully_expanded();
-    bool leaf_node();
-    bool expand();
+    bool is_terminal();
+    bool expanded();
+    bool has_moves();
+    Node* expand();
 
-    double value_score();
-    double selection_score(u64);
+    template <Policy policy>
+    double score(u64 parent_simulations=0);
+    template <Policy policy>
+    Node* get_child();
 
-    Node* best_child();
-    Node* select_child();
-
-    int simulate(int);
+    int simulate();
 
 private:
     Move next_move();
@@ -74,7 +76,6 @@ private:
     u64 simulations;
     u64 wins;
     Move move;
-    bool expanded;
 };
 
 class GameTree
