@@ -73,8 +73,8 @@ double Node::score<VALUE>(u64 parent_simulations)
 template <>
 double Node::score<SELECTION>(u64 parent_simulations)
 {
-    return double(wins) / double(simulations) +
-            std::sqrt(2 * std::log(double(parent_simulations)) / double(simulations));
+    return double(wins) / double(simulations)
+        + std::sqrt(2 * std::log(double(parent_simulations)) / double(simulations));
 }
 
 template <Policy policy>
@@ -177,8 +177,8 @@ std::vector<Move> GameTree::pv()
 void GameTree::search()
 {
     time_ms start_time = utils::curr_time();
+    time_ms prev_print_time = start_time;
     bool root_flipped = root.get_position().is_flipped();
-    u64 prev_simulations = 0;
 
     while (!stopped()) {
         auto selection = select();
@@ -190,19 +190,19 @@ void GameTree::search()
         curr->inc_simulations();
         backprop(parents, result);
 
-        if (root.get_simulations() - prev_simulations >= 10000)
+        time_ms now = utils::curr_time();
+        if (now - prev_print_time >= 500)
         {
             std::vector<Move> pv = this->pv();
             Node* best_child = root.get_child<VALUE>();
-            time_ms now = utils::curr_time();
             std::cout << "info"
-                << " cp " << 100.0 * best_child->get_wins() / double(best_child->get_simulations()) << "%"
+                << " cp " << 100.0 * best_child->score<VALUE>() << "%"
                 << " nodes " << root.get_simulations()
                 << " time " << now - start_time
                 << " nps " << root.get_simulations() * 1000 / (now - start_time)
                 << " pv " << uci::get_pv_string(pv, root_flipped)
                 << std::endl;
-            prev_simulations = root.get_simulations();
+            prev_print_time = now;
         }
     }
 

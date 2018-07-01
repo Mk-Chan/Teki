@@ -2,9 +2,7 @@
 *.o
 
 # Executables
-teki
-teki_new
-teki_old
+teki*
 *.exe
 
 # Folders
