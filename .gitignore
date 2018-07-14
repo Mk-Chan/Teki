@@ -1,6 +1,9 @@
 # Object files
 *.o
 
+# Weight files
+weights*
+
 # Executables
 teki*
 *.exe

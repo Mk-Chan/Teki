@@ -2,11 +2,21 @@ ENGINE_NAME = Teki
 UCI_NAME = "\"$(ENGINE_NAME)\""
 
 CXX = g++
+CC = gcc
+NVXX = nvcc
+
+CCFLAGS = -std=c11 -Wall -pipe -O3 -DNDEBUG
 CXXFLAGS = -std=c++17 -Wall -pipe $(EXTRACXXFLAGS) -DNAME=$(UCI_NAME)
-LDFLAGS = -pthread -Wl,--no-as-needed $(CXXFLAGS) $(EXTRALDFLAGS)
+NVFLAGS = -Xptxas -O3 -DNDEBUG
+
+LDFLAGS = -pthread -lz -Wl,--no-as-needed $(CXXFLAGS) $(EXTRALDFLAGS)
+NVLDFLAGS = -L/opt/cuda/lib64 -lcuda -lcudart -lcudnn -lcublas
 
 OBJS = main.o uci.o lookups.o position.o movegen.o move.o search.o\
        evaluate.o options.o tbprobe.o mcts.o
+NNOBJS = neural/commandline.o neural/encoder.o neural/factory.o\
+	   neural/filesystem.posix.o neural/loader.o neural/network_cudnn.o\
+	   neural/optionsdict.o
 
 BINDIR = /usr/local/bin
 
@@ -24,11 +34,14 @@ endif
 
 all: $(EXE)
 
-$(EXE): $(OBJS)
-	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
+$(EXE): $(OBJS) $(NNOBJS)
+	$(CXX) -o $@ $(OBJS) $(NNOBJS) $(LDFLAGS) $(NVLDFLAGS)
 
 tbprobe.o: syzygy/tbprobe.c
-	$(CXX) $(CXXFLAGS)   -c -o $@ $<
+	$(CC) $(CCFLAGS) -c -o $@ $<
+
+neural/network_cudnn.o: neural/network_cudnn.cu
+	$(NVXX) $(NVFLAGS) -c -o $@ $<
 
 install:
 	-cp $(EXE) $(BINDIR)
@@ -38,4 +51,4 @@ uninstall:
 	-rm -f $(BINDIR)/$(EXE)
 
 clean:
-	-rm -f $(OBJS) $(EXE)
+	-rm -f $(OBJS) $(NNOBJS) $(EXE)
