@@ -12,8 +12,8 @@ NVFLAGS = -Xptxas -O3 -DNDEBUG
 LDFLAGS = -pthread -lz -Wl,--no-as-needed $(CXXFLAGS) $(EXTRALDFLAGS)
 NVLDFLAGS = -L/opt/cuda/lib64 -lcuda -lcudart -lcudnn -lcublas
 
-OBJS = main.o uci.o lookups.o position.o movegen.o move.o search.o\
-       evaluate.o options.o tbprobe.o mcts.o
+OBJS = uci.o lookups.o position.o movegen.o move.o search.o evaluate.o\
+	   options.o tbprobe.o mcts.o
 NNOBJS = neural/commandline.o neural/encoder.o neural/factory.o\
 	   neural/filesystem.posix.o neural/loader.o neural/network_cudnn.o\
 	   neural/optionsdict.o
@@ -21,6 +21,12 @@ NNOBJS = neural/commandline.o neural/encoder.o neural/factory.o\
 BINDIR = /usr/local/bin
 
 EXE = teki
+
+ifeq ($(BUILD),test)
+	OBJS += test.o
+else
+	OBJS += main.o
+endif
 
 ifeq ($(BUILD),stats)
 	CXXFLAGS += -O3 -DDEBUG
