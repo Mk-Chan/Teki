@@ -21,7 +21,6 @@
 #include <sstream>
 #include <thread>
 
-#include "tt.h"
 #include "uci.h"
 #include "mcts.h"
 #include "options.h"
@@ -78,7 +77,7 @@ namespace handler
 
     void ucinewgame()
     {
-        tt.clear();
+        ;
     }
 
     void isready()
@@ -288,23 +287,8 @@ namespace handler
         {
             searching = true;
             std::thread search_thread([&pos]() {
-                if (mcts)
-                {
-                    GameTree gt {pos};
-                    gt.search();
-                }
-                else
-                {
-                    auto bestmove = pos.best_move();
-                    std::cout << "bestmove "
-                              << get_move_string(bestmove.first, pos.is_flipped());
-                    if (allow_ponder && bestmove.second)
-                    {
-                        std::cout << " ponder "
-                                  << get_move_string(bestmove.second, !pos.is_flipped());
-                    }
-                    std::cout << std::endl;
-                }
+                GameTree gt {pos};
+                gt.search();
                 searching = false;
             });
             search_thread.detach();

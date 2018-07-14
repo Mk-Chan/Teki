@@ -16,38 +16,4 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
-#include <string>
-
-#include "uci.h"
-#include "test.h"
-#include "lookups.h"
-#include "evaluate.h"
-
-int main()
-{
-    std::ios_base::sync_with_stdio(false);
-    std::cout.setf(std::ios::unitbuf);
-    lookups::init();
-    eval::init();
-
-#ifdef TEST
-    test();
-    return 0;
-#endif
-
-    std::string word;
-    while (true) {
-        std::cin >> word;
-        if (word == "uci")
-        {
-            uci::init();
-            break;
-        }
-        else
-        {
-            std::cout << "Unrecognized protocol!" << std::endl;
-        }
-    }
-    return 0;
-}
+extern void test();

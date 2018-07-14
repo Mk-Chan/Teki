@@ -12,22 +12,19 @@ NVFLAGS = -Xptxas -O3 -DNDEBUG
 LDFLAGS = -pthread -lz -Wl,--no-as-needed $(CXXFLAGS) $(EXTRALDFLAGS)
 NVLDFLAGS = -L/opt/cuda/lib64 -lcuda -lcudart -lcudnn -lcublas
 
-OBJS = uci.o lookups.o position.o movegen.o move.o search.o evaluate.o\
-	   options.o tbprobe.o mcts.o
+OBJS = main.o uci.o lookups.o position.o movegen.o move.o evaluate.o options.o\
+	   test.o tbprobe.o mcts.o
 NNOBJS = neural/commandline.o neural/encoder.o neural/factory.o\
-	   neural/filesystem.posix.o neural/loader.o neural/network_cudnn.o\
-	   neural/optionsdict.o
+		 neural/filesystem.posix.o neural/loader.o neural/network_cudnn.o\
+		 neural/optionsdict.o
 
 BINDIR = /usr/local/bin
 
 EXE = teki
 
 ifeq ($(BUILD),test)
-	OBJS += test.o
+	CXXFLAGS += -O3 -DNDEBUG -DTEST
 else
-	OBJS += main.o
-endif
-
 ifeq ($(BUILD),stats)
 	CXXFLAGS += -O3 -DDEBUG
 else
@@ -35,6 +32,7 @@ ifeq ($(BUILD),debug)
 	CXXFLAGS += -g -fno-omit-frame-pointer
 else
 	CXXFLAGS += -O3 -DNDEBUG
+endif
 endif
 endif
 

@@ -19,11 +19,3 @@ Will build "Teki 1".
 One can use more cores during the build with:
 
 `CORES=<cores> ./build.sh <version>`
-
-Build using CMake:
-```
-mkdir build
-cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DEXEC_NAME="\"Teki <version>\"" ..
-make
-```
