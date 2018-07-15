@@ -25,6 +25,15 @@
 #include "neural/optionsdict.h"
 #include "neural/move_index.h"
 
+int lc0_move_index(std::string move_str)
+{
+    int i = -1;
+    for (i = 0; i < 1858; ++i)
+        if (move_str == kIdxToMove[i])
+            break;
+    return i;
+}
+
 void test_nn()
 {
     auto network_factory = lczero::NetworkFactory::Get();
@@ -42,8 +51,8 @@ void test_nn()
     std::vector<Move> mlist;
 
     while (true) {
-        //pos.display();
-        //std::cout << std::endl;
+        pos.display();
+        std::cout << std::endl;
 
         mlist.clear();
         pos.generate_legal_movelist(mlist);
@@ -67,20 +76,17 @@ void test_nn()
         }
 
         comp->ComputeBlocking();
+        float q = -comp->GetQVal(0);
 
         Move best_move = 0;
         float best_p = -100;
         for (Move& m : mlist) {
-            Position np {pos};
-            np.make_move(m);
+            //Position np {pos};
+            //np.make_move(m);
             //np.display();
-            auto st = get_move_string(m, false);
-            int i = -1;
-            for (i = 0; i < 1858; ++i)
-                if (st == kIdxToMove[i])
-                    break;
+            std::string move_str = get_move_string(m, false);
+            int i = lc0_move_index(move_str);
             //std::cout << "i: " << i << ", move: " << kIdxToMove[i] << std::endl;
-            float q = comp->GetQVal(0);
             float p = comp->GetPVal(0, i);
             if (p > best_p)
             {
@@ -90,7 +96,8 @@ void test_nn()
             //std::cout << "Q: " << q << ", P: " << p << std::endl << std::endl;
         }
 
-        std::cout << get_move_string(best_move, pos.is_flipped()) << " ";
+        std::cout << get_move_string(best_move, pos.is_flipped());
+        std::cout << " q: " << q << " p: " << best_p << std::endl << std::endl;
         pos.make_move(best_move);
     }
     std::cout << std::endl << "Done!\n";
