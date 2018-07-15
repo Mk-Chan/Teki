@@ -71,17 +71,17 @@ void Position::display()
     for (int sq = A1; sq < NUM_SQUARES; ++sq) {
         if (sq && !(sq & 7))
             std::cout << '\n';
-        int piece = this->piece_on(sq ^ 56);
+        int xor_val = flipped ? 0 : 56;
+        int piece = this->piece_on(sq ^ xor_val);
         if (piece == NO_PIECE)
         {
             std::cout << "- ";
         }
         else
         {
-            int color = ((this->color_bb(US) & BB(sq ^ 56)) && !this->is_flipped())
-                     || ((this->color_bb(THEM) & BB(sq ^ 56)) && this->is_flipped())
-                      ? US
-                      : THEM;
+            int color = this->color_bb(US) & BB(sq ^ xor_val) ? US : THEM;
+            if (flipped)
+                color = !color;
             std::cout << piece_char(piece, color) << " ";
         }
     }
