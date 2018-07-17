@@ -35,9 +35,9 @@ InputPlanes EncodePositionForNN(const PositionHistory& history,
     const Position& board = history.Last();
     const bool we_are_black = board.is_flipped();
     if (board.get_castling_rights() & US_OOO) result[kAuxPlaneBase + 0].SetAll();
-    if (board.get_castling_rights() & US_OO) result[kAuxPlaneBase + 0].SetAll();
-    if (board.get_castling_rights() & THEM_OOO) result[kAuxPlaneBase + 0].SetAll();
-    if (board.get_castling_rights() & THEM_OO) result[kAuxPlaneBase + 0].SetAll();
+    if (board.get_castling_rights() & US_OO) result[kAuxPlaneBase + 1].SetAll();
+    if (board.get_castling_rights() & THEM_OOO) result[kAuxPlaneBase + 2].SetAll();
+    if (board.get_castling_rights() & THEM_OO) result[kAuxPlaneBase + 3].SetAll();
     if (we_are_black) result[kAuxPlaneBase + 4].SetAll();
     result[kAuxPlaneBase + 5].Fill(history.Last().get_half_moves());
     // Plane kAuxPlaneBase + 6 used to be movecount plane, now it's all zeros.
@@ -50,22 +50,21 @@ InputPlanes EncodePositionForNN(const PositionHistory& history,
        ++i, --history_idx) {
     if (history_idx < 0) break;
     const Position& position = history.GetPositionAt(history_idx);
-    const Position& board = position;
 
     const int base = i * kPlanesPerBoard;
-    result[base + 0].mask = board.piece_bb(PAWN, US);
-    result[base + 1].mask = board.piece_bb(KNIGHT, US);
-    result[base + 2].mask = board.piece_bb(BISHOP, US);
-    result[base + 3].mask = board.piece_bb(ROOK, US);
-    result[base + 4].mask = board.piece_bb(QUEEN, US);
-    result[base + 5].mask = board.piece_bb(KING, US);
+    result[base + 0].mask = position.piece_bb(PAWN, US);
+    result[base + 1].mask = position.piece_bb(KNIGHT, US);
+    result[base + 2].mask = position.piece_bb(BISHOP, US);
+    result[base + 3].mask = position.piece_bb(ROOK, US);
+    result[base + 4].mask = position.piece_bb(QUEEN, US);
+    result[base + 5].mask = position.piece_bb(KING, US);
 
-    result[base + 6].mask = board.piece_bb(PAWN, THEM);
-    result[base + 7].mask = board.piece_bb(KNIGHT, THEM);
-    result[base + 8].mask = board.piece_bb(BISHOP, THEM);
-    result[base + 9].mask = board.piece_bb(ROOK, THEM);
-    result[base + 10].mask = board.piece_bb(QUEEN, THEM);
-    result[base + 11].mask = board.piece_bb(KING, THEM);
+    result[base + 6].mask = position.piece_bb(PAWN, THEM);
+    result[base + 7].mask = position.piece_bb(KNIGHT, THEM);
+    result[base + 8].mask = position.piece_bb(BISHOP, THEM);
+    result[base + 9].mask = position.piece_bb(ROOK, THEM);
+    result[base + 10].mask = position.piece_bb(QUEEN, THEM);
+    result[base + 11].mask = position.piece_bb(KING, THEM);
 
     if (position.is_repetition()) result[base + 12].SetAll();
   }
