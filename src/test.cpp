@@ -19,11 +19,7 @@
 #include <iostream>
 
 #include "move.h"
-#include "neural/loader.h"
-#include "neural/factory.h"
-#include "neural/encoder.h"
-#include "neural/optionsdict.h"
-#include "neural/move_index.h"
+#include "lc0nn.h"
 
 int lc0_move_index(std::string move_str)
 {
@@ -36,9 +32,6 @@ int lc0_move_index(std::string move_str)
 
 void test_nn()
 {
-    auto network_factory = lczero::NetworkFactory::Get();
-    auto weights =  lczero::LoadWeightsFromFile("weights_479.txt.gz");
-    auto network = network_factory->Create("cudnn", weights, lczero::OptionsDict {});
     std::cout << "Enter FEN\n";
 
     std::string line;
@@ -61,43 +54,32 @@ void test_nn()
             break;
 
         auto comp = network->NewComputation();
-        for (Move& m : mlist) {
-            auto pos_hist = PositionHistory {};
-
-            Position p {pos};
-            pos_hist.Reset(p);
-
-            pos_hist.Append(m);
-            p = pos_hist.Last();
-
-            auto plane = lczero::EncodePositionForNN(pos_hist, pos_hist.GetLength());
-            lczero::InputPlanes planes {plane};
-            comp->AddInput(std::move(planes));
-        }
-
+        auto pos_hist = PositionHistory {};
+        pos_hist.Reset(pos);
+        pos_hist.Last().display();
+        auto planes = lczero::EncodePositionForNN(pos_hist, 8);
+        comp->AddInput(std::move(planes));
         comp->ComputeBlocking();
-        float q = -comp->GetQVal(0);
+
+        float q = comp->GetQVal(0);
+        std::cout << "q: " << q << std::endl;
 
         Move best_move = 0;
         float best_p = -100;
         for (Move& m : mlist) {
-            //Position np {pos};
-            //np.make_move(m);
-            //np.display();
             std::string move_str = get_move_string(m, false);
             int i = lc0_move_index(move_str);
-            //std::cout << "i: " << i << ", move: " << kIdxToMove[i] << std::endl;
             float p = comp->GetPVal(0, i);
             if (p > best_p)
             {
                 best_move = m;
                 best_p = p;
             }
-            //std::cout << "Q: " << q << ", P: " << p << std::endl << std::endl;
+            std::cout << move_str << ": p = " << p << std::endl;
         }
 
         std::cout << get_move_string(best_move, pos.is_flipped());
-        std::cout << " q: " << q << " p: " << best_p << std::endl << std::endl;
+        break;
         pos.make_move(best_move);
     }
     std::cout << std::endl << "Done!\n";

@@ -24,12 +24,24 @@
 #include "lookups.h"
 #include "evaluate.h"
 
+#include "lc0nn.h"
+
+lczero::NetworkFactory* network_factory;
+lczero::Weights weights;
+std::unique_ptr<lczero::Network> network;
+
 int main()
 {
     std::ios_base::sync_with_stdio(false);
     std::cout.setf(std::ios::unitbuf);
     lookups::init();
     eval::init();
+
+    std::string nn_backend = "cudnn";
+    network_factory = lczero::NetworkFactory::Get();
+    weights = lczero::LoadWeightsFromFile("weights_479.txt.gz");
+    network = network_factory->Create(nn_backend, weights, lczero::OptionsDict {});
+    std::cout << nn_backend << " ready!\n";
 
 #ifdef TEST
     test();

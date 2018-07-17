@@ -44,7 +44,7 @@ public:
     void init(std::stringstream& stream);
 
     // Misc
-    void display();
+    void display() const;
     u64 perft(int depth, bool root=true) const;
 
     // Getters

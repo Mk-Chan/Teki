@@ -66,7 +66,7 @@ int Position::piece_on(int sq) const
     return NO_PIECE;
 }
 
-void Position::display()
+void Position::display() const
 {
     for (int sq = A1; sq < NUM_SQUARES; ++sq) {
         if (sq && !(sq & 7))
