@@ -46,6 +46,13 @@ public:
         positions_.erase(positions_.begin() + size, positions_.end());
     }
 
+    void TrimTo8() {
+        int size = positions_.size();
+        if (size <= 8)
+            return;
+        positions_.erase(positions_.begin(), positions_.begin() + size - 8);
+    }
+
     // Number of positions in history.
     int GetLength() const { return positions_.size(); }
 
@@ -79,11 +86,10 @@ inline void PositionHistory::Reset(const Position& board, int no_capture_ply, in
 }
 
 inline void PositionHistory::Append(Move m) {
-    if (positions_.empty())
-        positions_.push_back(Position {});
-    else
-        positions_.emplace_back(positions_.back());
-    positions_.back().make_move(m);
+    Position p {positions_.back()};
+    p.make_move(m);
+    positions_.push_back(p);
+    TrimTo8();
 }
 
 #endif
