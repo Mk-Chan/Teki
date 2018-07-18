@@ -132,6 +132,13 @@ void Node::compute(std::vector<Node*>& parents)
     set_q(comp->GetQVal(0));
     for (const Move& m : mlist) {
         std::string move_str = get_move_string(m, false);
+        if (m & CASTLING)
+        {
+            if (move_str == "e1g1")
+                move_str = "e1h1";
+            else if (move_str == "e1c1")
+                move_str = "e1a1";
+        }
         push_p(comp->GetPVal(0, lc0_move_index(move_str)));
     }
 }
@@ -195,11 +202,11 @@ void GameTree::search()
         backprop(parents, curr->get_q());
 
         time_ms now = utils::curr_time();
-        if (now - prev_print_time >= 500)
+        if (now - prev_print_time >= 1000)
         {
             std::vector<Move> pv = this->pv();
             Node* best_child = root.get_child<VALUE>();
-            int cp = 290.680623072 * std::tan(1.548090806 * best_child->get_q());
+            float cp = 290.680623072 * std::tan(1.548090806 * best_child->get_q());
             std::cout << "info"
                 << " cp " << cp
                 << " nodes " << root.get_visits()
