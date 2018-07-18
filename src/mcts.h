@@ -22,11 +22,6 @@
 #include "utils.h"
 #include "position.h"
 
-enum ResultType
-{
-    PENDING, DRAW, WIN, LOSS
-};
-
 enum Policy
 {
     SELECTION, VALUE
@@ -35,13 +30,13 @@ enum Policy
 class Node
 {
 public:
-    Node(Position& pos) : pos(pos), simulations(0), wins(0), move(0) { this->generate_moves();}
+    Node(Position& pos) : pos(pos), visits(0), wins(0), move(0), self_p(0), q_val(0) {}
     void set_move(Move move) { this->move = move; }
     Move get_move() { return move; }
     std::vector<Node>& get_children() { return children; }
-    u64 get_simulations() { return simulations; }
-    u64 get_wins() { return wins; }
-    void inc_simulations() { ++simulations; }
+    int get_visits() { return visits; }
+    int get_wins() { return wins; }
+    void inc_visits() { ++visits; }
     void inc_wins() { ++wins; }
     void display() { pos.display(); }
     Position& get_position() { return pos; }
@@ -49,6 +44,11 @@ public:
     std::vector<Move> get_mlist() { return mlist; }
     Node* latest_child() { return &children.back(); }
     bool flipped() { return pos.is_flipped(); }
+    float get_q() { return q_val; }
+    float get_p() { return self_p; }
+    void set_q(float q) { q_val = q; }
+    void push_p(float p) { children_p.push_back(p); }
+    void set_p(float p) { self_p = p; }
 
     bool is_terminal();
     bool expanded();
@@ -56,21 +56,25 @@ public:
     Node* expand();
 
     template <Policy policy>
-    double score(u64 parent_simulations=0);
+    double score(int parent_visits=0);
     template <Policy policy>
     Node* get_child();
 
-    int simulate();
+    void compute(std::vector<Node*>& parents);
 
 private:
     Move next_move();
+    float next_p();
 
     Position pos;
     std::vector<Move> mlist;
+    std::vector<float> children_p;
     std::vector<Node> children;
-    u64 simulations;
-    u64 wins;
+    int visits;
+    int wins;
     Move move;
+    float self_p;
+    float q_val;
 };
 
 class GameTree

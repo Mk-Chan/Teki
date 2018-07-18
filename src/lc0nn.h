@@ -19,6 +19,8 @@
 #ifndef LC0NN_H
 #define LC0NN_H
 
+#include <numeric>
+
 #include "neural/loader.h"
 #include "neural/factory.h"
 #include "neural/encoder.h"
@@ -28,5 +30,24 @@
 extern lczero::NetworkFactory* network_factory;
 extern lczero::Weights weights;
 extern std::unique_ptr<lczero::Network> network;
+
+inline int lc0_move_index(std::string move_str)
+{
+    int i = -1;
+    for (i = 0; i < 1858; ++i)
+        if (move_str == kIdxToMove[i])
+            break;
+    return i;
+}
+
+inline std::vector<float> softmax(std::vector<float> pvals)
+{
+    float sum = std::accumulate(pvals.begin(), pvals.end(), 0.0);
+    std::vector<float> probs;
+    for (float p : pvals) {
+        probs.push_back(p / sum);
+    }
+    return probs;
+}
 
 #endif

@@ -17,29 +17,9 @@
  */
 
 #include <iostream>
-#include <numeric>
 
 #include "move.h"
 #include "lc0nn.h"
-
-int lc0_move_index(std::string move_str)
-{
-    int i = -1;
-    for (i = 0; i < 1858; ++i)
-        if (move_str == kIdxToMove[i])
-            break;
-    return i;
-}
-
-std::vector<float> softmax(std::vector<float> pvals)
-{
-    float sum = std::accumulate(pvals.begin(), pvals.end(), 0.0);
-    std::vector<float> probs;
-    for (float p : pvals) {
-        probs.push_back(p / sum);
-    }
-    return probs;
-}
 
 void test_nn()
 {
