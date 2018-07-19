@@ -77,7 +77,7 @@ double Node::score<VALUE>(int parent_visits)
 template <>
 double Node::score<SELECTION>(int parent_visits)
 {
-    float x = visits ? double(wins) / double(visits) : 0;
+    float x = get_q();
     float c = visits
         ? std::sqrt((3.0 / 2.0) * std::log(double(parent_visits)) / double(visits))
         : 0;

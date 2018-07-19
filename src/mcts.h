@@ -30,14 +30,12 @@ enum Policy
 class Node
 {
 public:
-    Node(Position& pos) : pos(pos), visits(0), wins(0), move(0), self_p(0), q_val(0) {}
+    Node(Position& pos) : pos(pos), visits(0), move(0), self_p(0), q_val(0) {}
     void set_move(Move move) { this->move = move; }
     Move get_move() { return move; }
     std::vector<Node>& get_children() { return children; }
     int get_visits() { return visits; }
-    int get_wins() { return wins; }
     void inc_visits() { ++visits; }
-    void inc_wins() { ++wins; }
     void display() { pos.display(); }
     Position& get_position() { return pos; }
     void generate_moves() { pos.generate_legal_movelist(mlist); }
@@ -71,7 +69,6 @@ private:
     std::vector<float> children_p;
     std::vector<Node> children;
     int visits;
-    int wins;
     Move move;
     float self_p;
     float q_val;
