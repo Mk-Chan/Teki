@@ -77,16 +77,10 @@ double Node::score<VALUE>(int parent_visits)
 template <>
 double Node::score<SELECTION>(int parent_visits)
 {
-    float x = -get_q();
-    float c = visits
-        ? std::sqrt((3.0 / 2.0) * std::log(double(parent_visits)) / double(visits))
-        : 0;
-    float m = 2.0 / self_p;
-    if (parent_visits > 1)
-        m *= std::sqrt(std::log(double(parent_visits)) / double(parent_visits));
-
-    //TODO:Fix this. Not detecting mates with m
-    return x + c;// - m;
+    float exploitation = -get_q();
+    float parents_child_visits = std::max(parent_visits - 1, 0);
+    float exploration = 1.22 * self_p * std::sqrt(parents_child_visits) / (1.0 + visits);
+    return exploitation + exploration;
 }
 
 template <Policy policy>
