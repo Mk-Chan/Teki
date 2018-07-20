@@ -77,7 +77,7 @@ double Node::score<VALUE>(int parent_visits)
 template <>
 double Node::score<SELECTION>(int parent_visits)
 {
-    float x = get_q();
+    float x = -get_q();
     float c = visits
         ? std::sqrt((3.0 / 2.0) * std::log(double(parent_visits)) / double(visits))
         : 0;
@@ -85,7 +85,8 @@ double Node::score<SELECTION>(int parent_visits)
     if (parent_visits > 1)
         m *= std::sqrt(std::log(double(parent_visits)) / double(parent_visits));
 
-    return x + c - m;
+    //TODO:Fix this. Not detecting mates with m
+    return x + c;// - m;
 }
 
 template <Policy policy>
@@ -110,7 +111,7 @@ void Node::compute(std::vector<Node*>& parents)
 
     if (pos.is_drawn())
     {
-        set_q(0);
+        set_q(0.0);
         return;
     }
 
@@ -118,7 +119,7 @@ void Node::compute(std::vector<Node*>& parents)
     const std::vector<Move>& mlist = get_mlist();
     if (mlist.empty())
     {
-        set_q(pos.checkers_to(US) ? 1 : 0);
+        set_q(pos.checkers_to(US) ? -1.0 : 0.0);
         return;
     }
 
@@ -163,16 +164,12 @@ std::pair<Node*, std::vector<Node*>> GameTree::select()
 
 void backprop(const std::vector<Node*>& parents, float child_q)
 {
-    float prev_q = 0.0;
     for (int i = parents.size()-1; i >= 0; --i) {
         Node* parent = parents[i];
+        child_q = -child_q;
         float q = parent->get_q();
-        if (parent->flipped())
-            q = -q;
-        int visits = parent->get_visits();
-        parent->set_q((q * visits - prev_q + child_q) / (visits + 1));
         parent->inc_visits();
-        prev_q = q;
+        parent->set_q(q + (child_q - q) / parent->get_visits());
     }
 }
 
@@ -206,7 +203,7 @@ void GameTree::search()
         {
             std::vector<Move> pv = this->pv();
             Node* best_child = root.get_child<VALUE>();
-            float cp = 290.680623072 * std::tan(1.548090806 * best_child->get_q());
+            float cp = 290.680623072 * std::tan(1.548090806 * -best_child->get_q());
             std::cout << "info"
                 << " cp " << cp
                 << " nodes " << root.get_visits()
