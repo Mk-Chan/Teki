@@ -24,146 +24,118 @@
 #include "options.h"
 #include "controller.h"
 
-#include "lc0nn.h"
+float c_puct = 1.22;
 
-Move Node::next_move()
+Node* Node::most_visited_child()
 {
-    Move m = mlist.back();
-    mlist.pop_back();
-    return m;
+    return &*std::max_element(_children.begin(), _children.end(), [](auto a, auto b) {
+        return a.visits() < b.visits();
+    });
 }
 
-float Node::next_p()
+float Node::ucb(float parent_visits) const
 {
-    float p = children_p.back();
-    children_p.pop_back();
-    return p;
+    return _payoff + c_puct * _prior * std::sqrt(parent_visits) / (1.0f + _visits);
 }
 
-bool Node::is_terminal()
+void Node::update_payoff(float child_payoff)
 {
-    return mlist.empty() && children.empty();
+    _payoff += (child_payoff - _payoff) / _visits;
 }
 
-bool Node::expanded()
+void Node::compute(std::vector<Node*>& parents, const PositionHistory& pos_hist)
 {
-    return !children.empty();
-}
-
-bool Node::has_moves()
-{
-    return !mlist.empty();
-}
-
-Node* Node::expand()
-{
-    Position p = pos;
-    Move move = next_move();
-    p.make_move(move);
-    Node child {p};
-    child.set_p(next_p());
-    child.set_move(move);
-    child.generate_moves();
-    children.push_back(child);
-    return &children.back();
-}
-
-template <>
-double Node::score<VALUE>(int parent_visits)
-{
-    return double(visits);
-}
-
-template <>
-double Node::score<SELECTION>(int parent_visits)
-{
-    float exploitation = -get_q();
-    float parents_child_visits = std::max(parent_visits - 1, 0);
-    float exploration = 1.22 * self_p * std::sqrt(parents_child_visits) / (1.0 + visits);
-    return exploitation + exploration;
-}
-
-template <Policy policy>
-Node* Node::get_child()
-{
-    std::size_t best_index = 0;
-    double best_score = children[best_index].score<policy>(visits);
-    for (std::size_t i = 1; i < children.size(); ++i) {
-        double score = children[i].score<policy>(visits);
-        if (score > best_score)
-        {
-            best_score = score;
-            best_index = i;
-        }
-    }
-    return &children[best_index];
-}
-
-void Node::compute(std::vector<Node*>& parents)
-{
-    Position pos = this->pos;
-
-    if (pos.is_drawn())
-    {
-        set_q(0.0);
-        return;
-    }
-
-    generate_moves();
-    const std::vector<Move>& mlist = get_mlist();
+    std::vector<Move> mlist;
+    mlist.reserve(256);
+    _pos.generate_legal_movelist(mlist);
     if (mlist.empty())
     {
-        set_q(pos.checkers_to(US) ? -1.0 : 0.0);
+        _payoff = _pos.checkers_to(US) ? -1.0f : 0.0f;
         return;
     }
 
-    auto pos_hist = PositionHistory {};
-    pos_hist.Reset(pos);
+    PositionHistory local_pos_hist;
+    bool is_flipped = flipped();
+    for (int i = 0; i < pos_hist.GetLength()-1; ++i) {
+        Position p {pos_hist.GetPositionAt(i)};
+        if (is_flipped ^ p.is_flipped())
+            p.flip();
+        local_pos_hist.Append(p);
+    }
+    if (!parents.empty())
+    {
+        for (int i = 0; i < parents.size(); ++i) {
+            Position p {parents[i]->pos()};
+            if (is_flipped ^ p.is_flipped())
+                p.flip();
+            local_pos_hist.Append(p);
+        }
+    }
+   local_pos_hist.Append(_pos);
+    local_pos_hist.TrimTo8();
+    auto planes = lczero::EncodePositionForNN(local_pos_hist);
     auto comp = network->NewComputation();
-    auto planes = lczero::EncodePositionForNN(pos_hist);
     comp->AddInput(std::move(planes));
     comp->ComputeBlocking();
+    ++controller.nodes_searched;
 
-    set_q(comp->GetQVal(0));
-    for (const Move& m : mlist) {
-        std::string move_str = get_move_string(m, false);
-        if (m & CASTLING)
-        {
-            if (move_str == "e1g1")
-                move_str = "e1h1";
-            else if (move_str == "e1c1")
-                move_str = "e1a1";
-        }
-        push_p(comp->GetPVal(0, lc0_move_index(move_str)));
+    _payoff = comp->GetQVal(0);
+    std::vector<float> priors;
+    for (Move& move : mlist) {
+        std::string move_str {get_move_string(move, false)};
+        if (move_str == "e1g1")
+            move_str = "e1h1";
+        else if (move_str == "e1c1")
+            move_str = "e1a1";
+        priors.push_back(comp->GetPVal(0, lc0_move_index(move_str)));
     }
+    priors = softmax(priors);
+
+    //std::cout << "Q: " << comp->GetQVal(0) << std::endl;
+    for (int i = 0; i < mlist.size(); ++i) {
+        Move& move = mlist[i];
+        float prior = priors[i];
+        Position child_pos {_pos};
+        child_pos.make_move(move);
+        std::string mstr {get_move_string(move, _pos.is_flipped())};
+        //std::cout << mstr << " P: " << prior;
+        Node child {child_pos, prior, _payoff, move};
+        //std::cout << " U: " << child.ucb(_visits) << std::endl;
+        _children.push_back(child);
+    }
+    if (_pos.is_drawn())
+        _payoff = 0.0f;
 }
 
 std::pair<Node*, std::vector<Node*>> GameTree::select()
 {
-    std::vector<Node*> parents;
     Node* curr = &root;
-    while (!curr->is_terminal()) {
-        if (curr->has_moves())
-        {
-            parents.push_back(curr);
-            curr = curr->expand();
-            break;
-        }
+    std::vector<Node*> parents;
+    while (curr->expanded()) {
         parents.push_back(curr);
-        curr = curr->get_child<SELECTION>();
+        std::vector<Node>& children = curr->children();
+        float best_ucb = -30000.0f;
+        Node* best_child;
+        for (auto& child : children) {
+            float child_ucb = child.ucb(curr->visits());
+            if (child_ucb > best_ucb)
+            {
+                best_ucb = child_ucb;
+                best_child = &child;
+            }
+        }
+        curr = best_child;
     }
 
     return {curr, parents};
 }
 
-void backprop(const std::vector<Node*>& parents, float child_q)
+void backprop(std::vector<Node*>& parents, float child_payoff)
 {
-    for (int i = parents.size()-1; i >= 0; --i) {
-        Node* parent = parents[i];
-        child_q = -child_q;
-        float q = parent->get_q();
-        parent->inc_visits();
-        parent->set_q(q + (child_q - q) / parent->get_visits());
+    for (auto par = parents.rbegin(); par != parents.rend(); ++par) {
+        (*par)->inc_visits();
+        (*par)->update_payoff(child_payoff);
+        child_payoff = -child_payoff;
     }
 }
 
@@ -172,8 +144,8 @@ std::vector<Move> GameTree::pv()
     std::vector<Move> pv;
     Node* curr = &root;
     while (curr->expanded()) {
-        curr = curr->get_child<VALUE>();
-        pv.push_back(curr->get_move());
+        curr = curr->most_visited_child();
+        pv.push_back(curr->move());
     }
     return pv;
 }
@@ -182,33 +154,32 @@ void GameTree::search()
 {
     time_ms start_time = utils::curr_time();
     time_ms prev_print_time = start_time;
-    bool root_flipped = root.get_position().is_flipped();
+    bool root_flipped = root.flipped();
+    controller.nodes_searched = 0;
 
     while (!stopped()) {
-        auto selection = select();
-        auto& [curr, parents] = selection;
-
-        curr->compute(parents);
+        auto& [curr, parents] = select();
+        curr->compute(parents, pos_hist);
         curr->inc_visits();
-        backprop(parents, curr->get_q());
+        backprop(parents, curr->payoff());
 
         time_ms now = utils::curr_time();
         if (now - prev_print_time >= 1000)
         {
             std::vector<Move> pv = this->pv();
-            Node* best_child = root.get_child<VALUE>();
-            float cp = 290.680623072 * std::tan(1.548090806 * -best_child->get_q());
+            Node* best_child = root.most_visited_child();
+            int cp = 290.680623072 * std::tan(1.548090806 * best_child->payoff());
             std::cout << "info"
-                << " cp " << cp
-                << " nodes " << root.get_visits()
+                << " score cp " << cp
+                << " nodes " << root.visits()
                 << " time " << now - start_time
-                << " nps " << root.get_visits() * 1000 / (now - start_time)
+                << " nps " << root.visits() * 1000 / (now - start_time)
                 << " pv " << uci::get_pv_string(pv, root_flipped)
                 << std::endl;
             prev_print_time = now;
         }
     }
 
-    Move best_move = root.get_child<VALUE>()->get_move();
+    Move best_move = root.most_visited_child()->move();
     std::cout << "bestmove " << get_move_string(best_move, root_flipped) << std::endl;
 }

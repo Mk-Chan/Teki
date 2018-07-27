@@ -27,6 +27,8 @@
 #include "position.h"
 #include "controller.h"
 
+#include "lc0nn.h"
+
 #define INITIAL_POSITION ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
 volatile bool searching = false;
@@ -169,7 +171,7 @@ namespace handler
         }
     }
 
-    void position(Position& pos, std::stringstream& stream)
+    void position(Position& pos, std::stringstream& stream, PositionHistory& pos_hist)
     {
         handler::stop();
 
@@ -179,21 +181,25 @@ namespace handler
         {
             std::stringstream stream {INITIAL_POSITION};
             pos.init(stream);
+            pos_hist.Reset(pos);
         }
         else if (word == "fen")
         {
             pos.init(stream);
+            pos_hist.Reset(pos);
         }
 
         if (stream >> word && word == "moves")
         {
             std::string move_str;
-            while (stream >> move_str)
+            while (stream >> move_str) {
                 pos.make_move(get_parsed_move(pos, move_str));
+                pos_hist.Append(pos);
+            }
         }
     }
 
-    void go(Position& pos, std::stringstream& stream)
+    void go(Position& pos, std::stringstream& stream, PositionHistory& pos_hist)
     {
         std::string word;
         controller.stop_search = false;
@@ -203,7 +209,10 @@ namespace handler
         controller.max_ply = MAX_PLY;
         controller.start_time = utils::curr_time();
         controller.end_time = controller.start_time;
+        controller.max_nodes = ~(0ULL);
         time_ms time_to_go = 1000;
+        if (pos_hist.GetLength() == 0)
+            pos_hist.Reset(pos);
         int moves_to_go = 35,
             increment = 0;
         while (stream >> word) {
@@ -266,6 +275,13 @@ namespace handler
             {
                 stream >> moves_to_go;
             }
+            else if (word == "nodes")
+            {
+                controller.time_dependent = false;
+                std::uint64_t max_nodes;
+                if (stream >> max_nodes)
+                    controller.max_nodes = max_nodes;
+            }
             else if (word == "depth")
             {
                 controller.time_dependent = false;
@@ -286,8 +302,8 @@ namespace handler
         if (!searching)
         {
             searching = true;
-            std::thread search_thread([&pos]() {
-                GameTree gt {pos};
+            std::thread search_thread([&pos, &pos_hist]() {
+                GameTree gt {pos, pos_hist};
                 gt.search();
                 searching = false;
             });
@@ -305,6 +321,7 @@ namespace handler
 void loop()
 {
     Position pos;
+    PositionHistory pos_hist;
     std::stringstream stream {INITIAL_POSITION};
     pos.init(stream);
     std::string line, word;
@@ -312,15 +329,15 @@ void loop()
     {
         std::getline(std::cin, line);
         std::stringstream stream {line};
-
+            
         stream >> word;
         if (word == "d") handler::d(pos);
         else if (word == "ucinewgame") handler::ucinewgame();
         else if (word == "setoption") handler::setoption(stream);
         else if (word == "isready") handler::isready();
         else if (word == "perft") handler::perft(pos, stream);
-        else if (word == "position") handler::position(pos, stream);
-        else if (word == "go") handler::go(pos, stream);
+        else if (word == "position") handler::position(pos, stream, pos_hist);
+        else if (word == "go") handler::go(pos, stream, pos_hist);
         else if (word == "ponderhit") handler::ponderhit();
         else if (word == "stop") handler::stop();
         else if (word == "quit") break;
@@ -373,7 +390,6 @@ namespace uci
         else if (bound == LOWER_BOUND)
             std::cout << " lowerbound";
         std::cout << " depth " << depth;
-        std::cout << " tbhits " << controller.tb_hits;
         std::cout << " nodes " << controller.nodes_searched;
         std::cout << " time " << time;
         if (time > 1000)

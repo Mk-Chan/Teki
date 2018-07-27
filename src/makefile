@@ -13,7 +13,7 @@ LDFLAGS = -pthread -lz -Wl,--no-as-needed $(CXXFLAGS) $(EXTRALDFLAGS)
 NVLDFLAGS = -L/opt/cuda/lib64 -lcuda -lcudart -lcudnn -lcublas
 
 OBJS = main.o uci.o lookups.o position.o movegen.o move.o evaluate.o options.o\
-	   test.o tbprobe.o mcts.o
+	   test.o mcts.o
 NNOBJS = neural/commandline.o neural/encoder.o neural/factory.o\
 		 neural/filesystem.posix.o neural/loader.o neural/network_cudnn.o\
 		 neural/optionsdict.o
@@ -40,9 +40,6 @@ all: $(EXE)
 
 $(EXE): $(OBJS) $(NNOBJS)
 	$(CXX) -o $@ $(OBJS) $(NNOBJS) $(LDFLAGS) $(NVLDFLAGS)
-
-tbprobe.o: syzygy/tbprobe.c
-	$(CC) $(CCFLAGS) -c -o $@ $<
 
 neural/network_cudnn.o: neural/network_cudnn.cu
 	$(NVXX) $(NVFLAGS) -c -o $@ $<

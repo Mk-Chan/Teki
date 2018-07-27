@@ -81,7 +81,7 @@ void test_nn()
         std::cout << get_move_string(best_move, pos.is_flipped()) << std::endl;
         //break;
         pos.make_move(best_move);
-        pos_hist.Append(best_move);
+        pos_hist.Append(pos);
     }
     std::cout << std::endl << "Done!\n";
 }

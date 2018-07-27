@@ -24,7 +24,7 @@
 struct Controller
 {
     std::uint64_t nodes_searched;
-    std::uint64_t tb_hits;
+    std::uint64_t max_nodes;
     time_ms start_time;
     time_ms end_time;
     volatile bool time_dependent;
@@ -49,6 +49,10 @@ inline bool stopped()
             return true;
         if (controller.end_time - curr_time <= 10)
             return true;
+    }
+    else if (controller.nodes_searched >= controller.max_nodes)
+    {
+        return true;
     }
 
     return false;

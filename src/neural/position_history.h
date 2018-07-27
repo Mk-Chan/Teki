@@ -24,8 +24,6 @@
 
 #include "../position.h"
 
-enum class GameResult { UNDECIDED, WHITE_WON, DRAW, BLACK_WON };
-
 class PositionHistory
 {
 public:
@@ -42,8 +40,8 @@ public:
     const Position& GetPositionAt(int idx) const { return positions_[idx]; }
 
     // Trims position to a given size.
-    void Trim(int size) {
-        positions_.erase(positions_.begin() + size, positions_.end());
+    void TrimToN(int n) {
+        positions_.erase(positions_.begin(), positions_.begin() + positions_.size() - n);
     }
 
     void TrimTo8() {
@@ -53,6 +51,8 @@ public:
         positions_.erase(positions_.begin(), positions_.begin() + size - 8);
     }
 
+    void Clear() { positions_.clear(); }
+
     // Number of positions in history.
     int GetLength() const { return positions_.size(); }
 
@@ -60,22 +60,15 @@ public:
     void Reset(const Position& board, int no_capture_ply=0, int game_ply=0);
 
     // Appends a position to history.
-    void Append(Move m);
+    void Append(const Position& board);
 
     // Pops last move from history.
     void Pop() { positions_.pop_back(); }
 
-    // Finds the endgame state (win/lose/draw/nothing) for the last position.
-    GameResult ComputeGameResult() const;
-
     // Returns whether next move is history should be black's.
     bool IsBlackToMove() const { return Last().is_flipped(); }
 
-    // Builds a hash from last X positions.
-    uint64_t HashLast(int positions) const;
-
 private:
-    int ComputeLastMoveRepetitions() const;
     std::vector<Position> positions_;
 };
 
@@ -85,11 +78,9 @@ inline void PositionHistory::Reset(const Position& board, int no_capture_ply, in
   positions_.emplace_back(board);
 }
 
-inline void PositionHistory::Append(Move m) {
-    Position p {positions_.back()};
-    p.make_move(m);
-    positions_.push_back(p);
-    TrimTo8();
+inline void PositionHistory::Append(const Position& board)
+{
+    positions_.emplace_back(board);
 }
 
 #endif

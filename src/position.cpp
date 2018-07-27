@@ -33,15 +33,19 @@ char piece_char(int pt, int c)
     case KING: pchar = 'k'; break;
     default: pchar = 'd'; break;
     }
+#ifdef _MSC_VER
+    return c == US ? toupper(pchar) : pchar;
+#else
     return c == US ? std::toupper(pchar) : pchar;
+#endif
 }
 
 void Position::flip()
 {
     for (u64* bb = this->bb; bb < this->bb + NUM_PIECE_TYPES; ++bb)
-        *bb = __builtin_bswap64(*bb);
+        *bb = bswap(*bb);
     for (u64* bb = this->color; bb < this->color + NUM_COLORS; ++bb)
-        *bb = __builtin_bswap64(*bb);
+        *bb = bswap(*bb);
 
     u64 tmp_color = this->color[1];
     this->color[1] = this->color[0];
@@ -445,27 +449,5 @@ bool Position::is_drawn() const
 {
     if (get_half_moves() > 99 || is_repetition())
         return true;
-    int num_pieces = popcnt(occupancy_bb());
-    if (num_pieces == 2)
-        return true;
-    else if (num_pieces == 3)
-    {
-        if (piece_bb(KNIGHT) || piece_bb(BISHOP))
-            return true;
-    }
-    else if (num_pieces == 4)
-    {
-        if (popcnt(piece_bb(KNIGHT)) == 2)
-            return true;
-
-        int num_us = popcnt(color_bb(US));
-        int num_them = popcnt(color_bb(THEM));
-        if (num_us == num_them)
-            return true;
-        else if (popcnt(piece_bb(BISHOP)) == 2)
-            return false;
-        else
-            return true;
-    }
     return false;
 }

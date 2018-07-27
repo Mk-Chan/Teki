@@ -22,68 +22,55 @@
 #include "utils.h"
 #include "position.h"
 
-enum Policy
-{
-    SELECTION, VALUE
-};
+#include "lc0nn.h"
 
 class Node
 {
 public:
-    Node(Position& pos) : pos(pos), visits(0), move(0), self_p(0), q_val(0) {}
-    void set_move(Move move) { this->move = move; }
-    Move get_move() { return move; }
-    std::vector<Node>& get_children() { return children; }
-    int get_visits() { return visits; }
-    void inc_visits() { ++visits; }
-    void display() { pos.display(); }
-    Position& get_position() { return pos; }
-    void generate_moves() { pos.generate_legal_movelist(mlist); }
-    std::vector<Move> get_mlist() { return mlist; }
-    Node* latest_child() { return &children.back(); }
-    bool flipped() { return pos.is_flipped(); }
-    float get_q() { return q_val; }
-    float get_p() { return self_p; }
-    void set_q(float q) { q_val = q; }
-    void push_p(float p) { children_p.push_back(p); }
-    void set_p(float p) { self_p = p; }
+    Node(Position& _pos, float _prior, float _payoff, Move move)
+        :_pos(_pos), _move(move), _prior(_prior), _payoff(_payoff), _visits(0) {}
+    Node(Position& _pos, float _prior, Move move) : Node(_pos, _prior, 0.0f, move) {}
 
-    bool is_terminal();
-    bool expanded();
-    bool has_moves();
-    Node* expand();
+    // Getters
+    const Position& pos() const { return _pos; }
+    float prior() const { return _prior; }
+    float payoff() const { return _payoff; }
+    int visits() const { return _visits; }
+    bool expanded() const { return !_children.empty(); }
+    bool flipped() const { return _pos.is_flipped(); }
+    void display() const { _pos.display(); }
+    Move move() const { return _move; }
+    std::vector<Node>& children() { return _children; }
 
-    template <Policy policy>
-    double score(int parent_visits=0);
-    template <Policy policy>
-    Node* get_child();
+    // Modifiers
+    void inc_visits() { ++_visits; }
 
-    void compute(std::vector<Node*>& parents);
+    // Core functions
+    Node* most_visited_child();
+    float ucb(float part_ucb) const;
+    void update_payoff(float child_qval);
+    void compute(std::vector<Node*>& parents, const PositionHistory& pos_hist);
 
 private:
-    Move next_move();
-    float next_p();
-
-    Position pos;
-    std::vector<Move> mlist;
-    std::vector<float> children_p;
-    std::vector<Node> children;
-    int visits;
-    Move move;
-    float self_p;
-    float q_val;
+    Position _pos;
+    Move _move;
+    float _prior;
+    float _payoff;
+    int _visits;
+    std::vector<Node> _children;
 };
 
 class GameTree
 {
 public:
-    GameTree(Position& pos) : root(pos) {}
+    GameTree(Position& pos, PositionHistory& pos_hist) : root(pos, 0.0f, 0), pos_hist(pos_hist) {}
     std::pair<Node*, std::vector<Node*>> select();
     std::vector<Move> pv();
     void search();
 
 private:
     Node root;
+    PositionHistory pos_hist;
 };
 
 #endif

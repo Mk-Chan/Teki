@@ -21,9 +21,15 @@
 
 #undef INFINITY
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#define NOMINMAX
+#endif
+
 #include <utility>
 #include <cassert>
 #include <cinttypes>
+#include <algorithm>
 
 #ifdef DEBUG
 #define STATS(x) x
@@ -42,16 +48,6 @@ constexpr int MAX_PHASE = 256;
 constexpr int INFINITY = 30000;
 constexpr int MATE = 29000;
 constexpr int MAX_MATE_VALUE = MATE - MAX_PLY;
-
-constexpr std::int64_t TB_MATE_VAL = 28000;
-constexpr std::int64_t TB_CURSED_MATE_VAL = 1;
-constexpr std::int64_t tb_values[5] = {
-    -TB_MATE_VAL,
-    -TB_CURSED_MATE_VAL,
-    0,
-    TB_CURSED_MATE_VAL,
-    TB_MATE_VAL
-};
 
 enum GamePhase
 {
@@ -119,9 +115,37 @@ inline int get_sq(int file, int rank) { return (rank << 3) ^ file; }
 inline int rank_of(int sq) { return sq >> 3; }
 inline int file_of(int sq) { return sq & 7; }
 
-inline int popcnt(u64 bb) { return __builtin_popcountll(bb); }
-inline int fbitscan(u64 bb) { return __builtin_ctzll(bb); }
-inline int rbitscan(u64 bb) { return 63 - __builtin_clzll(bb); }
+
+inline u64 bswap(u64 bb) {
+#ifdef _MSC_VER
+	return _byteswap_uint64(bb);
+#else
+	return __builtin_bswap64(bb);
+#endif
+}
+inline int popcnt(u64 bb) {
+#ifdef _MSC_VER
+	return int(__popcnt64(bb));
+#else
+	return __builtin_popcountll(bb);
+#endif
+}
+inline int fbitscan(u64 bb) {
+#ifdef _MSC_VER
+	unsigned long tz;
+	_BitScanForward64(&tz, bb);
+	return tz;
+#else
+	return __builtin_ctzll(bb);
+#endif
+}
+inline int rbitscan(u64 bb) {
+#ifdef _MSC_VER
+	return 63 - int(__lzcnt64(bb));
+#else
+	return 63 - __builtin_clzll(bb);
+#endif
+}
 
 inline u64 BB(int shift) { return u64(1) << shift; }
 inline u64 sBB(int shift) { return shift < 64 ? u64(1) << shift : 0; }

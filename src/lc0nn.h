@@ -42,7 +42,7 @@ inline int lc0_move_index(std::string move_str)
 
 inline std::vector<float> softmax(std::vector<float> pvals)
 {
-    float sum = std::accumulate(pvals.begin(), pvals.end(), 0.0);
+    float sum = std::accumulate(pvals.begin(), pvals.end(), 0.0f);
     std::vector<float> probs;
     for (float p : pvals) {
         probs.push_back(p / sum);

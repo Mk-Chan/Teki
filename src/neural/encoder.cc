@@ -39,7 +39,7 @@ InputPlanes EncodePositionForNN(const PositionHistory& history,
     if (board.get_castling_rights() & THEM_OOO) result[kAuxPlaneBase + 2].SetAll();
     if (board.get_castling_rights() & THEM_OO) result[kAuxPlaneBase + 3].SetAll();
     if (we_are_black) result[kAuxPlaneBase + 4].SetAll();
-    result[kAuxPlaneBase + 5].Fill(history.Last().get_half_moves());
+    result[kAuxPlaneBase + 5].Fill(board.get_half_moves());
     // Plane kAuxPlaneBase + 6 used to be movecount plane, now it's all zeros.
     // Plane kAuxPlaneBase + 7 is all ones to help NN find board edges.
     result[kAuxPlaneBase + 7].SetAll();
