@@ -39,7 +39,7 @@ int main()
 
     std::string nn_backend = "cudnn";
     network_factory = lczero::NetworkFactory::Get();
-    weights = lczero::LoadWeightsFromFile("C:\\Users\\manik\\Desktop\\weights_511.txt.gz");
+    weights = lczero::LoadWeightsFromFile("weights_522.txt.gz");
     network = network_factory->Create(nn_backend, weights, lczero::OptionsDict {});
     std::cout << nn_backend << " ready!\n";
 

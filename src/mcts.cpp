@@ -158,7 +158,8 @@ void GameTree::search()
     controller.nodes_searched = 0;
 
     while (!stopped()) {
-        auto& [curr, parents] = select();
+        auto selection = select();
+        auto& [curr, parents] = selection;
         curr->compute(parents, pos_hist);
         curr->inc_visits();
         backprop(parents, curr->payoff());
