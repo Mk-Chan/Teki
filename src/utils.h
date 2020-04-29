@@ -51,14 +51,14 @@ namespace utils
 
     inline std::uint32_t rand_u32(std::uint32_t low_incl, std::uint32_t high_incl)
     {
-        std::mt19937 rng(curr_time());
+        static std::mt19937 rng(curr_time());
         std::uniform_int_distribution<std::uint32_t> uni(low_incl, high_incl);
         return uni(rng);
     }
 
     inline std::int32_t rand_int(std::int32_t low_incl, std::int32_t high_incl)
     {
-        std::mt19937 rng(curr_time());
+        static std::mt19937 rng(curr_time());
         std::uniform_int_distribution<std::int32_t> uni(low_incl, high_incl);
         return uni(rng);
     }
