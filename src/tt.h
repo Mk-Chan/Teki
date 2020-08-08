@@ -40,7 +40,7 @@ enum TTConstants
 
     MOVE_MASK = 0x1fffff,
     FLAG_MASK = 0x3,
-    DEPTH_MASK = 0x7,
+    DEPTH_MASK = 0x7f,
 
     CLUSTER_SIZE = 4
 };
